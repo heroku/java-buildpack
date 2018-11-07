@@ -1,10 +1,13 @@
 package jdk_test
 
 import (
+	"os"
 	"testing"
+
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/heroku/java-buildpack/jdk"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestJdk(t *testing.T) {
@@ -13,11 +16,44 @@ func TestJdk(t *testing.T) {
 
 func testJdk(t *testing.T, when spec.G, it spec.S) {
 	var (
-		//installer *jdk.Installer
+	//installer *jdk.Installer
 	)
 
 	it.Before(func() {
 		// TODO
+		os.Setenv("STACK", "heroku-18")
+	})
+
+	when("#GetVersionUrl", func() {
+		it("should get 10.0.2", func() {
+			url, err := jdk.GetVersionUrl(jdk.Version{
+				Major:  10,
+				Tag:    "10.0.2",
+				Vendor: "openjdk",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(url, "https://lang-jvm.s3.amazonaws.com/jdk/heroku-18/openjdk10.0.2.tar.gz"); diff != "" {
+				t.Fatalf(`syscall.Exec Argv did not match: (-got +want)\n%s`, diff)
+			}
+		})
+
+		it("should get 1.8.0_181", func() {
+			url, err := jdk.GetVersionUrl(jdk.Version{
+				Major:  8,
+				Tag:    "1.8.0_181",
+				Vendor: "openjdk",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(url, "https://lang-jvm.s3.amazonaws.com/jdk/heroku-18/openjdk1.8.0_181.tar.gz"); diff != "" {
+				t.Fatalf(`syscall.Exec Argv did not match: (-got +want)\n%s`, diff)
+			}
+		})
 	})
 
 	when("#ParseVersionString", func() {

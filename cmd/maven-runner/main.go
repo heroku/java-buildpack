@@ -1,12 +1,14 @@
 package main
 
 import (
-	"github.com/buildpack/libbuildpack"
-	"io/ioutil"
-	"github.com/heroku/java-buildpack/maven"
-	"os"
-	"github.com/heroku/java-buildpack/cmd"
 	"flag"
+	"io/ioutil"
+	"os"
+
+	"github.com/buildpack/libbuildpack"
+	"github.com/heroku/java-buildpack/maven"
+	"github.com/heroku/java-buildpack/cmd"
+	"github.com/heroku/java-buildpack/jdk"
 )
 
 type MavenEnv interface {
@@ -53,18 +55,24 @@ func runGoals(goals, platformDir, cacheDir, launchDir string) (error) {
 	platform.Envs.SetAll()
 
 	cache := libbuildpack.Cache{Root: cacheDir, Logger: logger}
+	launch := libbuildpack.Launch{Root: launchDir, Logger: logger}
 
-	// TODO install jdk
+	appDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	jdkInstaller := jdk.Installer{
+		In: []byte{},
+		Out: os.Stdout,
+		Err: os.Stderr,
+	}
+	jdkInstaller.Install(appDir, cache, launch)
 
 	runner := maven.Runner{
 		In: []byte{},
 		Out: os.Stdout,
 		Err: os.Stderr,
-	}
-
-	appDir, err := os.Getwd()
-	if err != nil {
-		return err
 	}
 	runner.Run(appDir, goals, cache)
 

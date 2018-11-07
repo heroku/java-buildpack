@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+fetch_jdk() {
+  local jdkUrl="${1?}"
+  local jdkDir="${2?}"
+  curl --retry 3 --silent --show-error --location "$jdkUrl" | tar pxz -C "$jdkDir"
+}
+
+fetch_jdk "${1?}" "${2?}"
