@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir> <env-dir>
+
+echo "---> Java buildpack"
+
+# fail fast
+set -eo pipefail
+
+BP_DIR=$(cd $(dirname $0)/..; pwd) # absolute path
+
+# TODO bootstrap the binaries if need be...
+
+export PATH="$PATH:$BP_DIR/"
+
+maven-runner ${1} ${2} ${3} -goals "clean install"
+
