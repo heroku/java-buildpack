@@ -11,34 +11,25 @@ import (
 	"github.com/heroku/java-buildpack/jdk"
 )
 
-type MavenEnv interface {
-	AddRootDir(baseDir string) error
-	AddEnvDir(envDir string) error
-	List() []string
-}
-
 var (
-	goals string
+	goals       string
+	platformDir string
+	cacheDir    string
+	launchDir   string
 )
 
 func init() {
 	cmd.FlagGoals(&goals)
+	flag.StringVar(&platformDir, "platformDir", "", "platform directory")
+	flag.StringVar(&cacheDir, "cacheDir", "", "cache directory")
+	flag.StringVar(&launchDir, "launchDir", "", "launch directory")
 }
 
 func main() {
-	args := os.Args[1:]
-	if len(args) != 3 {
-		cmd.Exit(cmd.FailCode(cmd.CodeInvalidArgs, "not enough arguments"))
-	}
-
 	flag.Parse()
 	if flag.NArg() != 0 {
 		cmd.Exit(cmd.FailCode(cmd.CodeInvalidArgs, "parse arguments"))
 	}
-
-	platformDir := args[0]
-	cacheDir := args[1]
-	launchDir := args[2]
 
 	cmd.Exit(runGoals(goals, platformDir, cacheDir, launchDir))
 }
@@ -62,19 +53,27 @@ func runGoals(goals, platformDir, cacheDir, launchDir string) (error) {
 		return err
 	}
 
+	print("---> Installing JDK")
 	jdkInstaller := jdk.Installer{
-		In: []byte{},
+		In:  []byte{},
 		Out: os.Stdout,
 		Err: os.Stderr,
 	}
-	jdkInstaller.Install(appDir, cache, launch)
+	err = jdkInstaller.Install(appDir, cache, launch)
+	if err != nil {
+		return err
+	}
 
+	print("---> Running Maven")
 	runner := maven.Runner{
-		In: []byte{},
+		In:  []byte{},
 		Out: os.Stdout,
 		Err: os.Stderr,
 	}
-	runner.Run(appDir, goals, cache)
+	err = runner.Run(appDir, goals, cache)
+	if err != nil {
+		return err
+	}
 
 	// TODO write launch.toml
 

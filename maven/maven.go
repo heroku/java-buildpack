@@ -20,9 +20,15 @@ type Runner struct {
 }
 
 func (r *Runner) Run(appDir, goals string, cache libbuildpack.Cache) (error) {
-	r.Init(appDir, cache)
+	err := r.Init(appDir, cache)
+	if err != nil {
+		return err
+	}
 
-	r.createMavenRepoDir(cache)
+	err = r.createMavenRepoDir(cache)
+	if err != nil {
+		return err
+	}
 
 	mavenArgs := append(r.Options, goals)
 
@@ -47,9 +53,7 @@ func (r *Runner) Init(appDir string, cache libbuildpack.Cache) (error) {
 	}
 
 	r.Command = mvn
-	r.Options = []string{
-		r.constructMavenOpts(appDir),
-	}
+	r.Options = r.constructMavenOpts(appDir)
 	return nil
 }
 
@@ -73,10 +77,15 @@ func (r *Runner) installMaven(installDir string) (string, error) {
 	return "", nil
 }
 
-func (r *Runner) constructMavenOpts(appDir string) (string) {
-	mvnSettingsOpt := r.constructMavenSettingsOpts(appDir)
+func (r *Runner) constructMavenOpts(appDir string) ([]string) {
+	opts := []string{
+		"-B",
+		"-DskipTests",
+	}
 
-	return mvnSettingsOpt
+	opts = append(opts, r.constructMavenSettingsOpts(appDir))
+
+	return opts
 }
 
 func (r *Runner) constructMavenSettingsOpts(appDir string) (string) {
@@ -97,8 +106,8 @@ func (r *Runner) createMavenRepoDir(cache libbuildpack.Cache) (error) {
 	}
 	m2Dir := filepath.Join(usr.HomeDir, ".m2")
 	m2CacheLayer := cache.Layer("maven_m2")
-	os.Symlink(m2CacheLayer.Root, m2Dir)
-	return nil
+
+	return os.Symlink(m2CacheLayer.Root, m2Dir)
 }
 
 func (r *Runner) hasMavenWrapper(appDir string) (bool) {
@@ -106,10 +115,8 @@ func (r *Runner) hasMavenWrapper(appDir string) (bool) {
 	if !os.IsNotExist(err) {
 		_, err = os.Stat(filepath.Join(appDir, ".mvn", "wrapper", "maven-wrapper.jar"))
 		if !os.IsNotExist(err) {
-			print("has jar")
 			_, err = os.Stat(filepath.Join(appDir, ".mvn", "wrapper", "maven-wrapper.properties"))
 			if !os.IsNotExist(err) {
-				print("has props")
 				return true
 			}
 		}

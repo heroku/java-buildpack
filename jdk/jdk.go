@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+
 	"github.com/heroku/java-buildpack/util"
 	"github.com/buildpack/libbuildpack"
 )
@@ -69,8 +70,8 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 
 	cmd := exec.Command(filepath.Join("jdk-fetcher"), jdkUrl, jdkLayer.Root)
 	cmd.Env = os.Environ()
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = i.Out
+	cmd.Stderr = i.Err
 
 	if err := cmd.Run(); err != nil {
 		return err

@@ -12,5 +12,5 @@ BP_DIR=$(cd $(dirname $0)/..; pwd) # absolute path
 
 export PATH="$PATH:$BP_DIR/bin"
 
-maven-runner ${1} ${2} ${3} -goals "clean install"
+maven-runner -platformDir ${1} -cacheDir ${2} -launchDir ${3} -goals "clean install"
 
