@@ -2,12 +2,16 @@ package jdk_test
 
 import (
 	"os"
+	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/heroku/java-buildpack/jdk"
 	"github.com/google/go-cmp/cmp"
+	"github.com/buildpack/libbuildpack"
+	"fmt"
 )
 
 func TestJdk(t *testing.T) {
@@ -16,12 +20,63 @@ func TestJdk(t *testing.T) {
 
 func testJdk(t *testing.T, when spec.G, it spec.S) {
 	var (
-	//installer *jdk.Installer
+		installer *jdk.Installer
+		cache     libbuildpack.Cache
+		launch    libbuildpack.Launch
 	)
 
 	it.Before(func() {
-		// TODO
 		os.Setenv("STACK", "heroku-18")
+
+		wd, _ := os.Getwd()
+		os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(wd, "..", "bin")))
+
+		installer = &jdk.Installer{
+			In:  []byte{},
+			Out: os.Stdout,
+			Err: os.Stderr,
+		}
+
+		logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
+		cache = libbuildpack.Cache{Root: os.TempDir(), Logger: logger}
+		launch = libbuildpack.Launch{Root: os.TempDir(), Logger: logger}
+	})
+
+	it.After(func() {
+		os.RemoveAll(cache.Root)
+		os.RemoveAll(launch.Root)
+	})
+
+	when("#Install", func() {
+		it("should install the default", func() {
+			err := installer.Install(fixture("app_with_jdk_version"), cache, launch)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := os.Stat(launch.Layer("jdk").Root); os.IsNotExist(err) {
+				t.Fatal("launch layer not created")
+			}
+
+			print(filepath.Join(launch.Layer("jdk").Root, "bin", "java"))
+			if _, err := os.Stat(filepath.Join(launch.Layer("jdk").Root, "bin", "java")); os.IsNotExist(err) {
+				t.Fatal("java not installed")
+			}
+
+		})
+	})
+
+	when("#Init", func() {
+		it("should detect jdk version", func() {
+			err := installer.Init(fixture("app_with_jdk_version"))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if installer.Version.Tag != "1.8.0_181" {
+				t.Fatalf(`JDK version did not match: got %s, want %s`, installer.Version.Tag, "1.8.0_181")
+			}
+		})
 	})
 
 	when("#GetVersionUrl", func() {
@@ -125,4 +180,9 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 			}
 		})
 	})
+}
+
+func fixture(name string) (string) {
+	wd, _ := os.Getwd()
+	return filepath.Join(wd, "..", "test", "fixtures", name)
 }

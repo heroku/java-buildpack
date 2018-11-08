@@ -10,8 +10,6 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
-	"io/ioutil"
-
 	"github.com/heroku/java-buildpack/util"
 	"github.com/buildpack/libbuildpack"
 )
@@ -36,8 +34,8 @@ const (
 
 var (
 	DefaultVersionStrings = map[int]string{
-		8:  "1.8.0_181",
-		9:  "9.0.1",
+		8:  "1.8.0_191",
+		9:  "9.0.4",
 		10: "10.0.2",
 		11: "11.0.1",
 	}
@@ -64,14 +62,14 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 	}
 
 	if !IsValidJdkUrl(jdkUrl) {
-		return errors.New("Invalid JDK version")
+		return errors.New(fmt.Sprintf("Invalid JDK version: %s", jdkUrl))
 	}
 
 	jdkLayer := launchDir.Layer("jdk")
 
-	cmd := exec.Command("jdk-fetcher", jdkUrl, jdkLayer.Root)
+	cmd := exec.Command(filepath.Join("jdk-fetcher"), jdkUrl, jdkLayer.Root)
 	cmd.Env = os.Environ()
-	cmd.Stdout = ioutil.Discard
+	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
