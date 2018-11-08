@@ -11,7 +11,6 @@ import (
 	"github.com/heroku/java-buildpack/jdk"
 	"github.com/google/go-cmp/cmp"
 	"github.com/buildpack/libbuildpack"
-	"fmt"
 )
 
 func TestJdk(t *testing.T) {
@@ -27,9 +26,6 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 
 	it.Before(func() {
 		os.Setenv("STACK", "heroku-18")
-
-		wd, _ := os.Getwd()
-		os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(wd, "..", "bin")))
 
 		installer = &jdk.Installer{
 			In:  []byte{},
@@ -47,25 +43,6 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 		os.RemoveAll(launch.Root)
 	})
 
-	when("#Install", func() {
-		it("should install the default", func() {
-			err := installer.Install(fixture("app_with_jdk_version"), cache, launch)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if _, err := os.Stat(launch.Layer("jdk").Root); os.IsNotExist(err) {
-				t.Fatal("launch layer not created")
-			}
-
-			print(filepath.Join(launch.Layer("jdk").Root, "bin", "java"))
-			if _, err := os.Stat(filepath.Join(launch.Layer("jdk").Root, "bin", "java")); os.IsNotExist(err) {
-				t.Fatal("java not installed")
-			}
-
-		})
-	})
-
 	when("#Init", func() {
 		it("should detect jdk version", func() {
 			err := installer.Init(fixture("app_with_jdk_version"))
@@ -73,8 +50,9 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 				t.Fatal(err)
 			}
 
-			if installer.Version.Tag != "1.8.0_181" {
-				t.Fatalf(`JDK version did not match: got %s, want %s`, installer.Version.Tag, "1.8.0_181")
+			expected := "1.8.0_181"
+			if installer.Version.Tag != expected {
+				t.Fatalf(`JDK version did not match: got %s, want %s`, installer.Version.Tag, expected)
 			}
 		})
 	})

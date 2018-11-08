@@ -68,6 +68,8 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 
 	jdkLayer := launchDir.Layer("jdk")
 
+	// TODO write launch metadata
+
 	cmd := exec.Command(filepath.Join("jdk-fetcher"), jdkUrl, jdkLayer.Root)
 	cmd.Env = os.Environ()
 	cmd.Stdout = i.Out
