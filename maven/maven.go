@@ -25,11 +25,12 @@ func (r *Runner) Run(appDir, goals string, cache libbuildpack.Cache) (error) {
 		return err
 	}
 
-	err = r.createMavenRepoDir(cache)
+	err = r.createMavenRepoDir(appDir, cache)
 	if err != nil {
 		return err
 	}
 
+	// TODO check MAVEN_CUSTOM_GOALS
 	mavenArgs := append(r.Options, goals)
 
 	cmd := exec.Command(r.Command, mavenArgs...)
@@ -81,9 +82,12 @@ func (r *Runner) constructMavenOpts(appDir string) ([]string) {
 	opts := []string{
 		"-B",
 		"-DskipTests",
+		"-DoutputFile=target/mvn-dependency-list.log",
 	}
 
 	opts = append(opts, r.constructMavenSettingsOpts(appDir))
+
+	// TODO check MAVEN_CUSTOM_OPTS
 
 	return opts
 }
@@ -99,13 +103,18 @@ func (r *Runner) constructMavenSettingsOpts(appDir string) (string) {
 	return ""
 }
 
-func (r *Runner) createMavenRepoDir(cache libbuildpack.Cache) (error) {
+func (r *Runner) createMavenRepoDir(appDir string, cache libbuildpack.Cache) (error) {
 	usr, err := user.Current()
 	if err != nil {
 		return err
 	}
 	m2Dir := filepath.Join(usr.HomeDir, ".m2")
 	m2CacheLayer := cache.Layer("maven_m2")
+
+	err = os.MkdirAll(m2CacheLayer.Root, os.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	return os.Symlink(m2CacheLayer.Root, m2Dir)
 }
