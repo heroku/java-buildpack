@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"io/ioutil"
 )
 
 const (
@@ -14,6 +15,30 @@ const (
 
 func FlagGoals(dir *string) {
 	flag.StringVar(dir, "goals", DefaultGoals, "maven goals to run")
+}
+
+func FlagPlatform(dir *string) {
+	d, err := ioutil.TempDir("", "platform")
+	if err != nil {
+		panic(err)
+	}
+	flag.StringVar(dir, "platform", d, "platform directory")
+}
+
+func FlagCache(dir *string) {
+	d, err := ioutil.TempDir("", "platform")
+	if err != nil {
+		panic(err)
+	}
+	flag.StringVar(dir, "cache", d, "cache directory")
+}
+
+func FlagLaunch(dir *string) {
+	d, err := ioutil.TempDir("", "platform")
+	if err != nil {
+		panic(err)
+	}
+	flag.StringVar(dir, "launch", d, "launch directory")
 }
 
 const (

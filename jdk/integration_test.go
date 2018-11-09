@@ -39,8 +39,19 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
-		cache = libbuildpack.Cache{Root: os.TempDir(), Logger: logger}
-		launch = libbuildpack.Launch{Root: os.TempDir(), Logger: logger}
+
+		cacheRoot, err := ioutil.TempDir("", "cache")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		launchRoot, err := ioutil.TempDir("", "launch")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		cache = libbuildpack.Cache{Root: cacheRoot, Logger: logger}
+		launch = libbuildpack.Launch{Root: launchRoot, Logger: logger}
 	})
 
 	it.After(func() {
@@ -50,7 +61,7 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 
 	when("#Install", func() {
 		it("should install the default", func() {
-			err := installer.Install(fixture("app_with_jdk_version"), cache, launch)
+			_, err := installer.Install(fixture("app_with_jdk_version"), cache, launch)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -62,7 +73,6 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 			if _, err := os.Stat(filepath.Join(launch.Layer("jdk").Root, "bin", "java")); os.IsNotExist(err) {
 				t.Fatal("java not installed")
 			}
-
 		})
 	})
 }

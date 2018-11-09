@@ -25,7 +25,7 @@ func (r *Runner) Run(appDir, goals string, cache libbuildpack.Cache) (error) {
 		return err
 	}
 
-	err = r.createMavenRepoDir(appDir, cache)
+	m2Dir, err := r.createMavenRepoDir(appDir, cache)
 	if err != nil {
 		return err
 	}
@@ -41,6 +41,11 @@ func (r *Runner) Run(appDir, goals string, cache libbuildpack.Cache) (error) {
 	cmd.Stderr = r.Err
 
 	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	err = r.removeMavenRepoSymlink(m2Dir)
+	if err != nil {
 		return err
 	}
 
@@ -103,20 +108,31 @@ func (r *Runner) constructMavenSettingsOpts(appDir string) (string) {
 	return ""
 }
 
-func (r *Runner) createMavenRepoDir(appDir string, cache libbuildpack.Cache) (error) {
+func (r *Runner) createMavenRepoDir(appDir string, cache libbuildpack.Cache) (string, error) {
 	usr, err := user.Current()
 	if err != nil {
-		return err
+		return "", err
 	}
 	m2Dir := filepath.Join(usr.HomeDir, ".m2")
 	m2CacheLayer := cache.Layer("maven_m2")
 
 	err = os.MkdirAll(m2CacheLayer.Root, os.ModePerm)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return os.Symlink(m2CacheLayer.Root, m2Dir)
+	return m2Dir, os.Symlink(m2CacheLayer.Root, m2Dir)
+}
+
+func (r *Runner) removeMavenRepoSymlink(m2Dir string) (error) {
+	fi, err := os.Lstat(m2Dir)
+	if err != nil {
+		return err
+	}
+	if fi.Mode() & os.ModeSymlink == os.ModeSymlink {
+		return os.Remove(m2Dir)
+	}
+	return nil
 }
 
 func (r *Runner) hasMavenWrapper(appDir string) (bool) {

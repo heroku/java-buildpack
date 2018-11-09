@@ -34,8 +34,19 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 		}
 
 		logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
-		cache = libbuildpack.Cache{Root: os.TempDir(), Logger: logger}
-		launch = libbuildpack.Launch{Root: os.TempDir(), Logger: logger}
+
+		cacheRoot, err := ioutil.TempDir("", "cache")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		launchRoot, err := ioutil.TempDir("", "launch")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		cache = libbuildpack.Cache{Root: cacheRoot, Logger: logger}
+		launch = libbuildpack.Launch{Root: launchRoot, Logger: logger}
 	})
 
 	it.After(func() {

@@ -21,6 +21,11 @@ type Installer struct {
 	Version  Version
 }
 
+type Jdk struct {
+	Version Version
+	Home    string
+}
+
 type Version struct {
 	Major  int
 	Tag    string
@@ -53,17 +58,17 @@ func (i *Installer) Init(appDir string) (error) {
 	return nil
 }
 
-func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir libbuildpack.Launch) (error) {
+func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir libbuildpack.Launch) (Jdk, error) {
 	i.Init(appDir)
 	// check the build plan to see if another JDK has already been installed?
 
 	jdkUrl, err := GetVersionUrl(i.Version)
 	if err != nil {
-		return err
+		return Jdk{}, err
 	}
 
 	if !IsValidJdkUrl(jdkUrl) {
-		return errors.New(fmt.Sprintf("Invalid JDK version: %s", jdkUrl))
+		return Jdk{}, errors.New(fmt.Sprintf("Invalid JDK version: %s", jdkUrl))
 	}
 
 	jdkLayer := launchDir.Layer("jdk")
@@ -76,7 +81,7 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 	cmd.Stderr = i.Err
 
 	if err := cmd.Run(); err != nil {
-		return err
+		return Jdk{}, err
 	}
 
 	// install cacerts
@@ -86,7 +91,10 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 
 	// apply the overlay
 
-	return nil
+	return Jdk{
+		Home:    jdkLayer.Root,
+		Version: i.Version,
+	}, nil
 }
 
 func (i *Installer) detectVersion(appDir string) (Version, error) {

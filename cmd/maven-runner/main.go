@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
+	"fmt"
 
 	"github.com/buildpack/libbuildpack"
 	"github.com/heroku/java-buildpack/maven"
@@ -20,9 +21,9 @@ var (
 
 func init() {
 	cmd.FlagGoals(&goals)
-	flag.StringVar(&platformDir, "platformDir", "", "platform directory")
-	flag.StringVar(&cacheDir, "cacheDir", "", "cache directory")
-	flag.StringVar(&launchDir, "launchDir", "", "launch directory")
+	cmd.FlagPlatform(&platformDir)
+	cmd.FlagCache(&cacheDir)
+	cmd.FlagLaunch(&launchDir)
 }
 
 func main() {
@@ -59,10 +60,15 @@ func runGoals(goals, platformDir, cacheDir, launchDir string) (error) {
 		Out: os.Stdout,
 		Err: os.Stderr,
 	}
-	err = jdkInstaller.Install(appDir, cache, launch)
+	jdkInstall, err := jdkInstaller.Install(appDir, cache, launch)
 	if err != nil {
 		return err
 	}
+
+	// ideally the jdk pkg would do this, but it's hard to undo. even more preferably, the jdk stuff would be in
+	// it's own buildpack, and the lifecycle would handle this.
+	os.Setenv("JAVA_HOME", jdkInstall.Home)
+	os.Setenv("PATH", fmt.Sprintf("%s/bin:%s", os.Getenv("PATH"), jdkInstall.Home))
 
 	print("---> Running Maven")
 	runner := maven.Runner{
