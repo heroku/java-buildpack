@@ -126,10 +126,14 @@ func InstallCerts(jdk Jdk) error {
 
 	if _, err := os.Stat(systemCacerts); !os.IsNotExist(err) {
 		if _, err := os.Stat(jreCacerts); !os.IsNotExist(err) {
-			os.Remove(jreCacerts);
+			if err = os.Remove(jreCacerts); err != nil {
+				return err
+			}
 			return os.Symlink(systemCacerts, jreCacerts)
 		} else if _, err := os.Stat(jdkCacerts); !os.IsNotExist(err) {
-			os.Remove(jdkCacerts);
+			if err = os.Remove(jreCacerts); err != nil {
+				return err
+			}
 			return os.Symlink(systemCacerts, jdkCacerts)
 		}
 	}
