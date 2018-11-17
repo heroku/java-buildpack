@@ -65,6 +65,7 @@ func runGoals(goals, platformDir, cacheDir, launchDir string) (error) {
 		return err
 	}
 
+	// FIXME
 	// ideally the jdk pkg would do this, but it's hard to undo. even more preferably, the jdk stuff would be in
 	// it's own buildpack, and the lifecycle would handle this.
 	os.Setenv("JAVA_HOME", jdkInstall.Home)
