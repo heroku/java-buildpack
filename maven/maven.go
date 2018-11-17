@@ -6,10 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"io"
-
-	"github.com/buildpack/libbuildpack"
 	"os/user"
 	"fmt"
+
+	"github.com/buildpack/libbuildpack"
 )
 
 type Runner struct {

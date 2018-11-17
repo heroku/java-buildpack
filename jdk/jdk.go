@@ -2,6 +2,7 @@ package jdk
 
 import (
 	"io"
+	"io/ioutil"
 	"path/filepath"
 	"os"
 	"regexp"
@@ -72,6 +73,10 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 	}
 
 	jdkLayer := launchDir.Layer("jdk")
+	jdk := Jdk{
+		Home:    jdkLayer.Root,
+		Version: i.Version,
+	}
 
 	// TODO write launch metadata
 
@@ -84,17 +89,19 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 		return Jdk{}, err
 	}
 
-	// install cacerts
-	// create profile.d
-	// install pgconfig
-	// install metrics agent
+	if err := InstallCerts(jdk); err != nil {
+		return Jdk{}, err
+	}
 
-	// apply the overlay
+	if err := CreateProfileScripts(jdkLayer); err != nil {
+		return Jdk{}, err
+	}
 
-	return Jdk{
-		Home:    jdkLayer.Root,
-		Version: i.Version,
-	}, nil
+	// TODO install pgconfig
+	// TODO install metrics agent
+	// TODO apply the .jdk-overlay
+
+	return jdk, nil
 }
 
 func (i *Installer) detectVersion(appDir string) (Version, error) {
@@ -110,6 +117,39 @@ func (i *Installer) detectVersion(appDir string) (Version, error) {
 		}
 	}
 	return defaultVersion(), nil
+}
+
+func InstallCerts(jdk Jdk) error {
+	jreCacerts := filepath.Join(jdk.Home, "jre", "lib", "security", "cacerts")
+	jdkCacerts := filepath.Join(jdk.Home, "lib", "security", "cacerts")
+	systemCacerts := filepath.Clean("/etc/ssl/certs/java/cacerts")
+
+	if _, err := os.Stat(systemCacerts); !os.IsNotExist(err) {
+		if _, err := os.Stat(jreCacerts); !os.IsNotExist(err) {
+			os.Remove(jreCacerts);
+			return os.Symlink(systemCacerts, jreCacerts)
+		} else if _, err := os.Stat(jdkCacerts); !os.IsNotExist(err) {
+			os.Remove(jdkCacerts);
+			return os.Symlink(systemCacerts, jdkCacerts)
+		}
+	}
+	return nil
+}
+
+func CreateProfileScripts(layer libbuildpack.LaunchLayer) error {
+	jvmProfiled, err := ioutil.ReadFile("../profile.d/jvm.sh");
+	if err != nil {
+		return err
+	}
+	layer.WriteProfile("jvm.sh", string(jvmProfiled))
+
+	jdbcProfiled, err := ioutil.ReadFile("../profile.d/jdbc.sh");
+	if err != nil {
+		return err
+	}
+	layer.WriteProfile("jdbc.sh", string(jdbcProfiled))
+
+	return nil
 }
 
 func defaultVersion() Version {

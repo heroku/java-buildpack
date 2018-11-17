@@ -5,8 +5,10 @@ package jdk_test
 import (
 	"fmt"
 	"os"
+	"io"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sclevine/spec"
@@ -27,9 +29,29 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
+		wd, _ := os.Getwd()
+
 		os.Setenv("STACK", "heroku-18")
 
-		wd, _ := os.Getwd()
+		cacerts, err := ioutil.ReadFile(filepath.Join(wd, "..", "test", "fixtures", "cacerts"));
+		if err != nil {
+			t.Fatal(err)
+		}
+		cacertsFile := filepath.Clean("/etc/ssl/certs/java/cacerts")
+		err = os.MkdirAll(filepath.Dir(cacertsFile), 0755)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fh, err := os.OpenFile(cacertsFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer fh.Close()
+		_, err = io.Copy(fh, strings.NewReader(string(cacerts)))
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(wd, "..", "bin")))
 
 		installer = &jdk.Installer{
@@ -72,6 +94,19 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 
 			if _, err := os.Stat(filepath.Join(launch.Layer("jdk").Root, "bin", "java")); os.IsNotExist(err) {
 				t.Fatal("java not installed")
+			}
+
+			// TODO also check that it's a symlink
+			if _, err := os.Stat(filepath.Join(launch.Layer("jdk").Root, "jre", "lib", "security", "cacerts")); os.IsNotExist(err) {
+				t.Fatal("cacerts not linked")
+			}
+
+			if _, err := os.Stat(filepath.Join(launch.Layer("jdk").Root, "profile.d", "jvm.sh")); os.IsNotExist(err) {
+				t.Fatal("JVM profile.d script not installed")
+			}
+
+			if _, err := os.Stat(filepath.Join(launch.Layer("jdk").Root, "profile.d", "jdbc.sh")); os.IsNotExist(err) {
+				t.Fatal("JDBC profile.d script not installed")
 			}
 		})
 	})
