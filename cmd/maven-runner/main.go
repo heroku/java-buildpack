@@ -25,6 +25,8 @@ func init() {
 	cmd.FlagPlatform(&platformDir)
 	cmd.FlagCache(&cacheDir)
 	cmd.FlagLaunch(&launchDir)
+
+	// TODO shouldn't we be able to find this from the binary?
 	cmd.FlagBuildpack(&buildpackDir)
 }
 
@@ -66,7 +68,7 @@ func runGoals(goals, platformDir, cacheDir, launchDir, buildpackDir string) (err
 	if err != nil {
 		return err
 	}
-	println("Installed %s", jdkInstall.Version.Tag)
+	println("Java", jdkInstall.Version.Tag, "installed")
 
 	// FIXME
 	// ideally the jdk pkg would do this, but it's hard to undo. even more preferably, the jdk stuff would be in
