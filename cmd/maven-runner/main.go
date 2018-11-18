@@ -82,12 +82,10 @@ func runGoals(goals, platformDir, cacheDir, launchDir, buildpackDir string) (err
 		Out: os.Stdout,
 		Err: os.Stderr,
 	}
-	err = runner.Run(appDir, goals, cache)
-	if err != nil {
+
+	if err = runner.Run(appDir, goals, cache); err != nil {
 		return err
 	}
-
-	// TODO write launch.toml
 
 	return nil
 }
