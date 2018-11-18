@@ -79,12 +79,7 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 		Version: i.Version,
 	}
 
-	cmd := exec.Command(filepath.Join("jdk-fetcher"), jdkUrl, jdkLayer.Root)
-	cmd.Env = os.Environ()
-	cmd.Stdout = i.Out
-	cmd.Stderr = i.Err
-
-	if err := cmd.Run(); err != nil {
+	if err := i.fetchJdk(jdkUrl, jdkLayer); err != nil {
 		return jdk, err
 	}
 
@@ -98,7 +93,10 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 
 	// TODO install pgconfig
 	// TODO install metrics agent
-	// TODO apply the .jdk-overlay
+
+	if err := i.applyJdkOverlay(jdkLayer, appDir); err != nil {
+		return jdk, err
+	}
 
 	if err := jdk.WriteMetadata(jdkLayer); err != nil {
 		return jdk, err
@@ -109,6 +107,24 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 
 func (jdk Jdk) WriteMetadata(layer libbuildpack.LaunchLayer) error {
 	return layer.WriteMetadata(jdk)
+}
+
+func (i *Installer) fetchJdk(jdkUrl string, layer libbuildpack.LaunchLayer) error {
+	cmd := exec.Command(filepath.Join("jdk-fetcher"), jdkUrl, layer.Root)
+	cmd.Env = os.Environ()
+	cmd.Stdout = i.Out
+	cmd.Stderr = i.Err
+
+	return cmd.Run()
+}
+
+func (i *Installer) applyJdkOverlay(layer libbuildpack.LaunchLayer, appDir string) error {
+	cmd := exec.Command(filepath.Join("jdk-overlay"), layer.Root, filepath.Join(appDir, ".jdk-overlay"))
+	cmd.Env = os.Environ()
+	cmd.Stdout = i.Out
+	cmd.Stderr = i.Err
+
+	return cmd.Run()
 }
 
 func (i *Installer) detectVersion(appDir string) (Version, error) {
