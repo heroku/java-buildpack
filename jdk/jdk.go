@@ -24,14 +24,14 @@ type Installer struct {
 }
 
 type Jdk struct {
-	Version Version
-	Home    string
+	Version Version `toml:"version"`
+	Home    string  `toml:"home"`
 }
 
 type Version struct {
-	Major  int
-	Tag    string
-	Vendor string
+	Major  int    `toml:"major"`
+	Tag    string `toml:"tag"`
+	Vendor string `toml:"vendor"`
 }
 
 const (
@@ -87,22 +87,30 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 	cmd.Stderr = i.Err
 
 	if err := cmd.Run(); err != nil {
-		return Jdk{}, err
+		return jdk, err
 	}
 
 	if err := InstallCerts(jdk); err != nil {
-		return Jdk{}, err
+		return jdk, err
 	}
 
 	if err := CreateProfileScripts(i.BuildpackDir, jdkLayer); err != nil {
-		return Jdk{}, err
+		return jdk, err
 	}
 
 	// TODO install pgconfig
 	// TODO install metrics agent
 	// TODO apply the .jdk-overlay
 
+	if err := jdk.WriteMetadata(jdkLayer); err != nil {
+		return jdk, err
+	}
+
 	return jdk, nil
+}
+
+func (jdk Jdk) WriteMetadata(layer libbuildpack.LaunchLayer) error {
+	return layer.WriteMetadata(jdk)
 }
 
 func (i *Installer) detectVersion(appDir string) (Version, error) {

@@ -14,10 +14,69 @@ import (
 )
 
 func TestJdk(t *testing.T) {
-	spec.Run(t, "Installer", testJdk, spec.Report(report.Terminal{}))
+	spec.Run(t, "Installer", testJdkInstaller, spec.Report(report.Terminal{}))
+	spec.Run(t, "Jdk", testJdk, spec.Report(report.Terminal{}))
 }
 
 func testJdk(t *testing.T, when spec.G, it spec.S) {
+	var (
+		launch    libbuildpack.Launch
+	)
+
+	it.Before(func() {
+		launchRoot, err := ioutil.TempDir("", "launch")
+		if err != nil {
+			t.Fatal(err)
+		}
+		logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
+		launch = libbuildpack.Launch{Root: launchRoot, Logger: logger}
+	})
+
+	it.After(func() {
+		os.RemoveAll(launch.Root)
+	})
+
+	when("#WriteMetadata", func() {
+		it("should detect jdk version", func() {
+			expected := jdk.Jdk {
+				Home: launch.Root,
+				Version: jdk.Version {
+					Major: 8,
+					Tag: "1.8.0_191",
+					Vendor: "openjdk",
+				},
+			}
+
+			if err := expected.WriteMetadata(launch.Layer("jdk")); err != nil {
+				t.Fatal(err)
+			}
+
+			var actual jdk.Jdk
+			if err := launch.Layer("jdk").ReadMetadata(&actual); err != nil {
+				t.Fatal("Layer metadata was not written")
+			}
+
+			if actual.Home != expected.Home {
+				t.Fatalf(`Jdk.Home did not match: got %s, want %s`, actual.Home, expected.Home)
+			}
+
+			if actual.Version.Major != expected.Version.Major {
+				t.Fatalf(`Jdk.Version.Tag did not match: got %d, want %d`, actual.Version.Major, expected.Version.Major)
+			}
+
+			if actual.Version.Tag != expected.Version.Tag {
+				t.Fatalf(`Jdk.Version.Tag did not match: got %s, want %s`, actual.Version.Tag, expected.Version.Tag)
+			}
+
+			if actual.Version.Vendor != expected.Version.Vendor {
+				t.Fatalf(`Jdk.Version.Vendor did not match: got %s, want %s`, actual.Version.Vendor, expected.Version.Vendor)
+			}
+		})
+	})
+
+}
+
+func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 	var (
 		installer *jdk.Installer
 		cache     libbuildpack.Cache

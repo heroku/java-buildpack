@@ -108,6 +108,27 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 			if _, err := os.Stat(filepath.Join(launch.Layer("jdk").Root, "profile.d", "jdbc.sh")); os.IsNotExist(err) {
 				t.Fatal("JDBC profile.d script not installed")
 			}
+
+			var jdkMetadata jdk.Jdk
+			if err := launch.Layer("jdk").ReadMetadata(&jdkMetadata); err != nil {
+				t.Fatal("Layer metadata was not written")
+			}
+
+			if jdkMetadata.Home != launch.Layer("jdk").Root {
+				t.Fatalf(`Jdk.Home did not match: got %s, want %s`, jdkMetadata.Home, launch.Layer("jdk").Root)
+			}
+
+			if jdkMetadata.Version.Major != 8 {
+				t.Fatalf(`Jdk.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Major, 8)
+			}
+
+			if jdkMetadata.Version.Tag != jdk.DefaultVersionStrings[8] {
+				t.Fatalf(`Jdk.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Tag, jdk.DefaultVersionStrings[8])
+			}
+
+			if jdkMetadata.Version.Vendor != jdk.DefaultVersionStrings[8] {
+				t.Fatalf(`Jdk.Version.Vendor did not match: got %s, want %s`, jdkMetadata.Version.Vendor, jdk.DefaultVendor)
+			}
 		})
 	})
 }
