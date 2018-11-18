@@ -216,6 +216,30 @@ func ParseVersionString(v string) (Version, error) {
 			Tag:    v,
 			Major:  major,
 		}, nil
+	} else if v == "9+181" || v == "9.0.0" {
+		return Version{
+			Vendor: DefaultVendor,
+			Tag:    "9-181",
+			Major:  9,
+		}, nil
+	} else if m := regexp.MustCompile("^9\\.").FindAllStringSubmatch(v, -1); len(m) == 1 {
+		return Version{
+			Vendor: DefaultVendor,
+			Tag:    v,
+			Major:  9,
+		}, nil
+	} else if m := regexp.MustCompile("^zulu-(.*)").FindAllStringSubmatch(v, -1); len(m) == 1 {
+		return Version{
+			Vendor: "zulu-",
+			Tag:    m[0][1],
+			Major:  parseMajorVersion(m[0][1]),
+		}, nil
+	} else if m := regexp.MustCompile("^openjdk-(.*)").FindAllStringSubmatch(v, -1); len(m) == 1 {
+		return Version{
+			Vendor: "openjdk",
+			Tag:    m[0][1],
+			Major:  parseMajorVersion(m[0][1]),
+		}, nil
 	}
 
 	return Version{}, errors.New("unparseable version string")
@@ -232,7 +256,12 @@ func GetVersionUrl(v Version) (string, error) {
 		return "", errors.New("missing stack")
 	}
 
-	return fmt.Sprintf("%s/%s/%s%s.tar.gz", baseUrl, stack, v.Vendor, v.Tag), nil
+	vendor := v.Vendor
+	if v.Vendor == "zulu" {
+		vendor = "zulu-"
+	}
+
+	return fmt.Sprintf("%s/%s/%s%s.tar.gz", baseUrl, stack, vendor, v.Tag), nil
 }
 
 func IsValidJdkUrl(url string) bool {
@@ -241,4 +270,27 @@ func IsValidJdkUrl(url string) bool {
 		return false
 	}
 	return res.StatusCode < 300
+}
+
+func parseMajorVersion(tag string) (int) {
+	if m := regexp.MustCompile("^1\\.7").FindAllStringSubmatch(tag, -1); len(m) == 1 {
+		return 7
+	} else if m := regexp.MustCompile("^1\\.8").FindAllStringSubmatch(tag, -1); len(m) == 1 {
+		return 8
+	} else if m := regexp.MustCompile("^1\\.9").FindAllStringSubmatch(tag, -1); len(m) == 1 {
+		return 9
+	} else if m := regexp.MustCompile("^7").FindAllStringSubmatch(tag, -1); len(m) == 1 {
+		return 7
+	} else if m := regexp.MustCompile("^8").FindAllStringSubmatch(tag, -1); len(m) == 1 {
+		return 8
+	} else if m := regexp.MustCompile("^9").FindAllStringSubmatch(tag, -1); len(m) == 1 {
+		return 9
+	} else if m := regexp.MustCompile("^10").FindAllStringSubmatch(tag, -1); len(m) == 1 {
+		return 10
+	} else if m := regexp.MustCompile("^11").FindAllStringSubmatch(tag, -1); len(m) == 1 {
+		return 11
+	} else {
+		major, _ := strconv.Atoi(tag)
+		return major
+	}
 }

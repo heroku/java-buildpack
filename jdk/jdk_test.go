@@ -139,7 +139,7 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			if diff := cmp.Diff(url, "https://lang-jvm.s3.amazonaws.com/jdk/heroku-18/openjdk10.0.2.tar.gz"); diff != "" {
-				t.Fatalf(`syscall.Exec Argv did not match: (-got +want)\n%s`, diff)
+				t.Fatalf(`URL did not match: (-got +want)\n%s`, diff)
 			}
 		})
 
@@ -154,7 +154,22 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 			}
 
 			if diff := cmp.Diff(url, "https://lang-jvm.s3.amazonaws.com/jdk/heroku-18/openjdk1.8.0_181.tar.gz"); diff != "" {
-				t.Fatalf(`syscall.Exec Argv did not match: (-got +want)\n%s`, diff)
+				t.Fatalf(`URL did not match: (-got +want)\n%s`, diff)
+			}
+		})
+
+		it("should get zulu-1.8.0_181", func() {
+			url, err := jdk.GetVersionUrl(jdk.Version{
+				Major:  8,
+				Tag:    "1.8.0_181",
+				Vendor: "zulu",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(url, "https://lang-jvm.s3.amazonaws.com/jdk/heroku-18/zulu-1.8.0_181.tar.gz"); diff != "" {
+				t.Fatalf(`URL did not match: (-got +want)\n%s`, diff)
 			}
 		})
 	})
@@ -213,6 +228,66 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 
 			if v.Tag != jdk.DefaultVersionStrings[11] {
 				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Tag, jdk.DefaultVersionStrings[11])
+			}
+
+			if v.Vendor != "openjdk" {
+				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Vendor, "openjdk")
+			}
+		})
+
+		it("should parse 9", func() {
+			expected := "9+181"
+			v, err := jdk.ParseVersionString(expected)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if v.Major != 9 {
+				t.Fatalf(`JDK version did not match: got %d, want %d`, v.Major, 9)
+			}
+
+			if v.Tag != "9-181" {
+				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Tag, "9-181")
+			}
+
+			if v.Vendor != "openjdk" {
+				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Vendor, "openjdk")
+			}
+		})
+
+		it("should parse zulu", func() {
+			expected := "zulu-1.8.0_191"
+			v, err := jdk.ParseVersionString(expected)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if v.Major != 8 {
+				t.Fatalf(`JDK version did not match: got %d, want %d`, v.Major, 8)
+			}
+
+			if v.Tag != "1.8.0_191" {
+				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Tag, "1.8.0_191")
+			}
+
+			if v.Vendor != "zulu-" {
+				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Vendor, "zulu")
+			}
+		})
+
+		it("should parse openjdk", func() {
+			expected := "openjdk-1.8.0_191"
+			v, err := jdk.ParseVersionString(expected)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if v.Major != 8 {
+				t.Fatalf(`JDK version did not match: got %d, want %d`, v.Major, 8)
+			}
+
+			if v.Tag != "1.8.0_191" {
+				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Tag, "1.8.0_191")
 			}
 
 			if v.Vendor != "openjdk" {
