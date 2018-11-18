@@ -65,6 +65,31 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 				}
 			})
 		})
+		when("MAVEN_SETTINGS_PATH is set", func() {
+			appDir = fixture("app_with_settings")
+
+			it("should not use the default settings", func() {
+				expected := "any/old/path/settings.xml"
+				os.Setenv("MAVEN_SETTINGS_PATH", expected)
+
+				if err := runner.Init(appDir, cache); err != nil {
+					t.Fatal(err)
+				}
+
+				if !hasOption(runner.Options, fmt.Sprintf("-s %s", expected)) {
+					t.Fatalf(`runner options does not use environment variable: \n%s`, runner.Options)
+				}
+
+				os.Unsetenv("MAVEN_SETTINGS_PATH")
+			})
+		})
+		when("MAVEN_SETTINGS_URL is set", func() {
+			appDir = fixture("app_with_settings")
+
+			it("should not use the default settings", func() {
+				// TODO
+			})
+		})
 	})
 }
 

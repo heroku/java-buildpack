@@ -59,7 +59,11 @@ func (r *Runner) Init(appDir string, cache libbuildpack.Cache) (error) {
 	}
 
 	r.Command = mvn
-	r.Options = r.constructMavenOpts(appDir)
+	r.Options, err = r.constructMavenOpts(appDir)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -83,37 +87,60 @@ func (r *Runner) installMaven(installDir string) (string, error) {
 	return "", nil
 }
 
-func (r *Runner) constructMavenOpts(appDir string) ([]string) {
+func (r *Runner) constructMavenOpts(appDir string) ([]string, error) {
 	opts := []string{
 		"-B",
 		"-DskipTests",
 		"-DoutputFile=target/mvn-dependency-list.log",
 	}
 
-	opts = append(opts, r.constructMavenSettingsOpts(appDir))
+	settingsOpt, err := r.constructMavenSettingsOpts(appDir)
+	if err != nil {
+		return []string{}, err
+	}
+
+	opts = append(opts, settingsOpt)
 
 	// TODO check MAVEN_CUSTOM_OPTS
 
-	return opts
+	return opts, nil
 }
 
-func (r *Runner) constructMavenSettingsOpts(appDir string) (string) {
-	if _, isSet := os.LookupEnv("MAVEN_SETTINGS_PATH"); isSet {
-		// TODO
-	} else if _, isSet := os.LookupEnv("MAVEN_SETTINGS_URL"); isSet {
-		// TODO
+func (r *Runner) constructMavenSettingsOpts(appDir string) (string, error) {
+	if mvnSettingsPath, isSet := os.LookupEnv("MAVEN_SETTINGS_PATH"); isSet {
+		return fmt.Sprintf("-s %s", mvnSettingsPath), nil
+	} else if mvnSettingsUrl, isSet := os.LookupEnv("MAVEN_SETTINGS_URL"); isSet {
+		m2Dir, err := defaultMavenHome()
+		if err != nil {
+			return "", err
+		}
+
+		settingsXml := filepath.Join(m2Dir, "settings.xml")
+
+		cmd := exec.Command("curl", "--retry", "3", "--max-time", "10", "-sfL", mvnSettingsUrl, "-o", settingsXml)
+		cmd.Env = os.Environ()
+		cmd.Stdout = r.Out
+		cmd.Stderr = r.Err
+
+		if err := cmd.Run(); err != nil {
+			return "", err
+		}
+		if _, err := os.Stat(settingsXml); !os.IsNotExist(err) {
+			return "", err
+		}
+		return fmt.Sprintf("-s %s", settingsXml), nil
 	} else if _, err := os.Stat(filepath.Join(appDir, "settings.xml")); !os.IsNotExist(err) {
-		return fmt.Sprintf("-s %s", filepath.Join(appDir, "settings.xml"))
+		return fmt.Sprintf("-s %s", filepath.Join(appDir, "settings.xml")), nil
 	}
-	return ""
+	return "", nil
 }
 
 func (r *Runner) createMavenRepoDir(appDir string, cache libbuildpack.Cache) (string, error) {
-	usr, err := user.Current()
+	m2Dir, err := defaultMavenHome()
 	if err != nil {
 		return "", err
 	}
-	m2Dir := filepath.Join(usr.HomeDir, ".m2")
+
 	m2CacheLayer := cache.Layer("maven_m2")
 
 	err = os.MkdirAll(m2CacheLayer.Root, os.ModePerm)
@@ -147,4 +174,12 @@ func (r *Runner) hasMavenWrapper(appDir string) (bool) {
 		}
 	}
 	return false
+}
+
+func defaultMavenHome() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(usr.HomeDir, ".m2"), nil
 }
