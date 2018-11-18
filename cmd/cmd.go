@@ -26,7 +26,7 @@ func FlagPlatform(dir *string) {
 }
 
 func FlagCache(dir *string) {
-	d, err := ioutil.TempDir("", "platform")
+	d, err := ioutil.TempDir("", "cache")
 	if err != nil {
 		panic(err)
 	}
@@ -34,11 +34,19 @@ func FlagCache(dir *string) {
 }
 
 func FlagLaunch(dir *string) {
-	d, err := ioutil.TempDir("", "platform")
+	d, err := ioutil.TempDir("", "launch")
 	if err != nil {
 		panic(err)
 	}
 	flag.StringVar(dir, "launch", d, "launch directory")
+}
+
+func FlagBuildpack(dir *string) {
+	d, err := ioutil.TempDir("", "buildpack")
+	if err != nil {
+		panic(err)
+	}
+	flag.StringVar(dir, "buildpack", d, "buildpack directory for this buildpack")
 }
 
 const (

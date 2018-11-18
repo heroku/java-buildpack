@@ -1,5 +1,5 @@
 [buildpack]
-id = "heroku/java"
+id = "heroku___java"
 version = "0.1.0"
 name = "Java"
 

@@ -17,9 +17,10 @@ import (
 )
 
 type Installer struct {
-	In       []byte
-	Out, Err io.Writer
-	Version  Version
+	In           []byte
+	Out, Err     io.Writer
+	Version      Version
+	BuildpackDir string
 }
 
 type Jdk struct {
@@ -93,7 +94,7 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 		return Jdk{}, err
 	}
 
-	if err := CreateProfileScripts(jdkLayer); err != nil {
+	if err := CreateProfileScripts(i.BuildpackDir, jdkLayer); err != nil {
 		return Jdk{}, err
 	}
 
@@ -140,14 +141,14 @@ func InstallCerts(jdk Jdk) error {
 	return nil
 }
 
-func CreateProfileScripts(layer libbuildpack.LaunchLayer) error {
-	jvmProfiled, err := ioutil.ReadFile("../profile.d/jvm.sh");
+func CreateProfileScripts(buildpackDir string, layer libbuildpack.LaunchLayer) error {
+	jvmProfiled, err := ioutil.ReadFile(filepath.Join(buildpackDir, "profile.d", "jvm.sh"));
 	if err != nil {
 		return err
 	}
 	layer.WriteProfile("jvm.sh", string(jvmProfiled))
 
-	jdbcProfiled, err := ioutil.ReadFile("../profile.d/jdbc.sh");
+	jdbcProfiled, err := ioutil.ReadFile(filepath.Join(buildpackDir, "profile.d", "jdbc.sh"));
 	if err != nil {
 		return err
 	}
