@@ -134,6 +134,7 @@ func installGlobalJdk(installDir string) error {
 		In:  []byte{},
 		Out: os.Stdout,
 		Err: os.Stderr,
+		BuildpackDir: filepath.Join(wd, ".."),
 	}
 	jdkInstall, err := jdkInstaller.Install("/", jdkCache, jdkLaunch)
 	if err != nil {

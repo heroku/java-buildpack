@@ -21,7 +21,7 @@ install_go() {
 }
 
 
-go_dir="$(mktemp -d)"
+go_dir="$(mktemp -d)" # TODO put it in the cache
 install_go "$go_dir"
 
 export PATH="$PATH:${go_dir}/go/bin"
