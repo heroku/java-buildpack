@@ -49,6 +49,7 @@ func (r *Runner) Run(appDir, goals string, cache libbuildpack.Cache) (error) {
 	return nil
 }
 
+// This function should remain free of side-effects to the filesystem
 func (r *Runner) Init(appDir string, cache libbuildpack.Cache) (error) {
 	mvn, err := r.resolveMavenCommand(appDir, cache)
 	if err != nil {
