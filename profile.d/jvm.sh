@@ -3,18 +3,21 @@
 calculate_java_memory_opts() {
   local opts=${1:-""}
 
-  limit=$(ulimit -u)
+  local limit=536870912
+  if [ -f /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
+    limit=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
+  fi
   case $limit in
-  512)   # 2X, private-s: memory.limit_in_bytes=1073741824
+  1073741824)   # 2X, private-s
     echo "$opts -Xmx671m -XX:CICompilerCount=2"
     ;;
-  16384) # perf-m, private-m: memory.limit_in_bytes=2684354560
+  2684354560) # perf-m, private-m
     echo "$opts -Xms512m -Xmx2g"
     ;;
-  32768) # perf-l, private-l: memory.limit_in_bytes=15032385536
+  15032385536) # perf-l, private-l
     echo "$opts -Xms1g -Xmx12g"
     ;;
-  *) # Free, Hobby, 1X: memory.limit_in_bytes=536870912
+  *) # Free, Hobby, 1X
     echo "$opts -Xmx300m -Xss512k -XX:CICompilerCount=2"
     ;;
   esac
