@@ -38,6 +38,10 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 		}
 	})
 
+	it.After(func() {
+		os.RemoveAll(cache.Root)
+	})
+
 	when("#Init", func() {
 		when("has a maven wrapper", func() {
 			appDir = fixture("app_with_wrapper")
@@ -79,15 +83,10 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 				if !hasOption(runner.Options, fmt.Sprintf("-s %s", expected)) {
 					t.Fatalf(`runner options does not use environment variable: \n%s`, runner.Options)
 				}
-
-				os.Unsetenv("MAVEN_SETTINGS_PATH")
 			})
-		})
-		when("MAVEN_SETTINGS_URL is set", func() {
-			appDir = fixture("app_with_settings")
 
-			it("should not use the default settings", func() {
-				// TODO
+			it.After(func() {
+				os.Unsetenv("MAVEN_SETTINGS_PATH")
 			})
 		})
 	})

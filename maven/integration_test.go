@@ -113,6 +113,28 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 			}
 		})
 	})
+
+	when("#Init", func() {
+		when("MAVEN_SETTINGS_URL is set", func() {
+			it("should not use the default settings", func() {
+				appDir := fixture("app_with_settings")
+				expected := "https://raw.githubusercontent.com/kissaten/settings-xml-example/master/settings.xml"
+				os.Setenv("MAVEN_SETTINGS_URL", expected)
+
+				if err := runner.Init(appDir, cache); err != nil {
+					t.Fatal(err)
+				}
+
+				if !hasOption(runner.Options, "-s /tmp/settings.xml") {
+					t.Fatalf(`runner options does not use environment variable: \n%s`, runner.Options)
+				}
+			})
+
+			it.After(func() {
+				os.Unsetenv("MAVEN_SETTINGS_URL")
+			})
+		})
+	})
 }
 
 func installGlobalJdk(installDir string) error {
