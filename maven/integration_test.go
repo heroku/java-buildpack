@@ -90,7 +90,7 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 
 	when("#Install", func() {
 		it("should get the maven version", func() {
-			err := runner.Run(fixture("app_with_pom"), "--version", cache)
+			err := runner.Run(fixture("app_with_pom"), "--version", []string{}, cache)
 			if err != nil {
 				t.Fatal(stderr.String(), err)
 			}
@@ -102,7 +102,7 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("should run maven", func() {
-			err := runner.Run(fixture("app_with_pom"), "clean install", cache)
+			err := runner.Run(fixture("app_with_pom"), "clean install", []string{}, cache)
 			if err != nil {
 				t.Fatal(stderr.String(), err)
 			}

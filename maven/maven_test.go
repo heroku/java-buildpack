@@ -89,6 +89,26 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 				os.Unsetenv("MAVEN_SETTINGS_PATH")
 			})
 		})
+		when("MAVEN_CUSTOM_GOALS is set", func() {
+			appDir = fixture("app_with_wrapper")
+
+			it("should not use the defaults", func() {
+				expected := "clean package"
+				os.Setenv("MAVEN_CUSTOM_GOALS", expected)
+
+				if err := runner.Init(appDir, cache); err != nil {
+					t.Fatal(err)
+				}
+
+				if runner.Goals != expected {
+					t.Fatalf(`runner goals did not use environment variable: got %s, want %s`, runner.Goals, expected)
+				}
+			})
+
+			it.After(func() {
+				os.Unsetenv("MAVEN_CUSTOM_GOALS")
+			})
+		})
 	})
 }
 

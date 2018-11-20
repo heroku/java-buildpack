@@ -9,44 +9,36 @@ import (
 	"io/ioutil"
 )
 
-const (
-	DefaultGoals      = "clean install"
-)
-
-func FlagGoals(dir *string) {
-	flag.StringVar(dir, "goals", DefaultGoals, "maven goals to run")
-}
-
-func FlagPlatform(dir *string) {
+func FlagPlatform(v *string) {
 	d, err := ioutil.TempDir("", "platform")
 	if err != nil {
 		panic(err)
 	}
-	flag.StringVar(dir, "platform", d, "platform directory")
+	flag.StringVar(v, "platform", d, "platform directory")
 }
 
-func FlagCache(dir *string) {
+func FlagCache(v *string) {
 	d, err := ioutil.TempDir("", "cache")
 	if err != nil {
 		panic(err)
 	}
-	flag.StringVar(dir, "cache", d, "cache directory")
+	flag.StringVar(v, "cache", d, "cache directory")
 }
 
-func FlagLaunch(dir *string) {
+func FlagLaunch(v *string) {
 	d, err := ioutil.TempDir("", "launch")
 	if err != nil {
 		panic(err)
 	}
-	flag.StringVar(dir, "launch", d, "launch directory")
+	flag.StringVar(v, "launch", d, "launch directory")
 }
 
-func FlagBuildpack(dir *string) {
+func FlagBuildpack(v *string) {
 	d, err := ioutil.TempDir("", "buildpack")
 	if err != nil {
 		panic(err)
 	}
-	flag.StringVar(dir, "buildpack", d, "buildpack directory for this buildpack")
+	flag.StringVar(v, "buildpack", d, "buildpack directory for this buildpack")
 }
 
 const (

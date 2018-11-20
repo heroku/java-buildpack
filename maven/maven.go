@@ -18,9 +18,13 @@ type Runner struct {
 	Out, Err io.Writer
 	Command  string
 	Options  []string
+	Goals    string
 }
 
-func (r *Runner) Run(appDir, goals string, cache libbuildpack.Cache) (error) {
+func (r *Runner) Run(appDir, defaultGoals string, options []string, cache libbuildpack.Cache) (error) {
+	r.Goals = defaultGoals
+	r.Options = options
+
 	err := r.Init(appDir, cache)
 	if err != nil {
 		return err
@@ -32,8 +36,7 @@ func (r *Runner) Run(appDir, goals string, cache libbuildpack.Cache) (error) {
 	}
 	defer r.removeMavenRepoSymlink(m2Dir)
 
-	// TODO check MAVEN_CUSTOM_GOALS
-	mavenArgs := append(r.Options, goals)
+	mavenArgs := append(r.Options, r.Goals)
 
 	cmd := exec.Command(r.Command, mavenArgs...)
 	cmd.Env = os.Environ()
@@ -57,10 +60,12 @@ func (r *Runner) Init(appDir string, cache libbuildpack.Cache) (error) {
 	}
 
 	r.Command = mvn
-	r.Options, err = r.constructMavenOpts(appDir)
+	r.Options, err = r.constructOptions(appDir)
 	if err != nil {
 		return err
 	}
+
+	r.Goals = r.constructGoals(r.Goals)
 
 	return nil
 }
@@ -81,30 +86,44 @@ func (r *Runner) resolveMavenCommand(appDir string, cache libbuildpack.Cache) (s
 }
 
 func (r *Runner) installMaven(installDir string) (string, error) {
-	// TODO
-	return "", nil
+	cmd := exec.Command(filepath.Join("maven-installer"), installDir)
+	cmd.Env = os.Environ()
+	cmd.Stdout = r.Out
+	cmd.Stderr = r.Err
+
+	return filepath.Join(installDir, "bin", "mvn"), cmd.Run()
 }
 
-func (r *Runner) constructMavenOpts(appDir string) ([]string, error) {
+func (r *Runner) constructGoals(defaultGoals string) string {
+	if goals, isSet := os.LookupEnv("MAVEN_CUSTOM_GOALS"); isSet {
+		return goals
+	}
+	return defaultGoals
+}
+
+func (r *Runner) constructOptions(appDir string) ([]string, error) {
 	opts := []string{
 		"-B",
-		"-DskipTests",
 		"-DoutputFile=target/mvn-dependency-list.log",
 	}
 
-	settingsOpt, err := r.constructMavenSettingsOpts(appDir)
+	opts = append(opts, r.Options...)
+
+	settingsOpt, err := r.constructSettingsOpts(appDir)
 	if err != nil {
 		return []string{}, err
 	}
 
 	opts = append(opts, settingsOpt)
 
-	// TODO check MAVEN_CUSTOM_OPTS
+	if customOpts, isSet := os.LookupEnv("MAVEN_CUSTOM_OPTS"); isSet {
+		opts = append(opts, customOpts)
+	}
 
 	return opts, nil
 }
 
-func (r *Runner) constructMavenSettingsOpts(appDir string) (string, error) {
+func (r *Runner) constructSettingsOpts(appDir string) (string, error) {
 	if mvnSettingsPath, isSet := os.LookupEnv("MAVEN_SETTINGS_PATH"); isSet {
 		return fmt.Sprintf("-s %s", mvnSettingsPath), nil
 	} else if mvnSettingsUrl, isSet := os.LookupEnv("MAVEN_SETTINGS_URL"); isSet {

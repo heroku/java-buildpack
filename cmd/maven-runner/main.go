@@ -13,18 +13,22 @@ import (
 )
 
 var (
-	goals       string
-	platformDir string
-	cacheDir    string
-	launchDir   string
+	goals        string
+	options      string
+	platformDir  string
+	cacheDir     string
+	launchDir    string
 	buildpackDir string
 )
 
 func init() {
-	cmd.FlagGoals(&goals)
+	flag.StringVar(&goals, "goals", "clean install", "maven goals to run")
+	flag.StringVar(&options, "goals", "", "maven goals to run")
+
 	cmd.FlagPlatform(&platformDir)
 	cmd.FlagCache(&cacheDir)
 	cmd.FlagLaunch(&launchDir)
+	cmd.FlagLaunch(&options)
 
 	// TODO shouldn't we be able to find this from the binary?
 	cmd.FlagBuildpack(&buildpackDir)
@@ -36,10 +40,10 @@ func main() {
 		cmd.Exit(cmd.FailCode(cmd.CodeInvalidArgs, "parse arguments"))
 	}
 
-	cmd.Exit(runGoals(goals, platformDir, cacheDir, launchDir, buildpackDir))
+	cmd.Exit(runGoals(goals, options, platformDir, cacheDir, launchDir, buildpackDir))
 }
 
-func runGoals(goals, platformDir, cacheDir, launchDir, buildpackDir string) (error) {
+func runGoals(goals, options, platformDir, cacheDir, launchDir, buildpackDir string) (error) {
 	logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
 
 	platform, err := libbuildpack.NewPlatform(platformDir, logger)
@@ -83,7 +87,7 @@ func runGoals(goals, platformDir, cacheDir, launchDir, buildpackDir string) (err
 		Err: os.Stderr,
 	}
 
-	if err = runner.Run(appDir, goals, cache); err != nil {
+	if err = runner.Run(appDir, goals, []string{options}, cache); err != nil {
 		return err
 	}
 
