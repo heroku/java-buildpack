@@ -81,7 +81,7 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 				}
 
 				if !hasOption(runner.Options, fmt.Sprintf("-s %s", expected)) {
-					t.Fatalf(`runner options does not use environment variable: \n%s`, runner.Options)
+					t.Fatalf(`runner settings option does not use environment variable: \n%s`, runner.Options)
 				}
 			})
 
@@ -89,6 +89,7 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 				os.Unsetenv("MAVEN_SETTINGS_PATH")
 			})
 		})
+
 		when("MAVEN_CUSTOM_GOALS is set", func() {
 			appDir = fixture("app_with_wrapper")
 
@@ -107,6 +108,31 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 
 			it.After(func() {
 				os.Unsetenv("MAVEN_CUSTOM_GOALS")
+			})
+		})
+
+		when("MAVEN_CUSTOM_OPTS is set", func() {
+			appDir = fixture("app_with_wrapper")
+
+			it("should not use the defaults", func() {
+				expected := "-Dfoo=bar"
+				os.Setenv("MAVEN_CUSTOM_OPTS", expected)
+
+				if err := runner.Init(appDir, cache); err != nil {
+					t.Fatal(err)
+				}
+
+				if !hasOption(runner.Options, expected) {
+					t.Fatalf(`runner options does not use environment variable: \n%s`, runner.Options)
+				}
+
+				if !hasOption(runner.Options, "-B") {
+					t.Fatalf(`runner does not keep default options when customized: \n%s`, runner.Options)
+				}
+			})
+
+			it.After(func() {
+				os.Unsetenv("MAVEN_CUSTOM_OPTS")
 			})
 		})
 	})
