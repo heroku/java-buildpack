@@ -112,6 +112,23 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 				t.Fatalf("Expected to find \"%s\" in: %s", expected, stdout)
 			}
 		})
+
+		it("should use settings.xml", func() {
+			err := runner.Run(fixture("app_with_settings"), "clean install", []string{}, cache)
+			if err != nil {
+				t.Fatal(stderr.String(), err)
+			}
+
+			expected := "[INFO] Downloading from jboss-public-repository: http://repository.jboss.org/nexus/content/groups/public"
+			if !strings.Contains(stdout.String(), expected) {
+				t.Fatalf("Expected to find \"%s\" in: %s", expected, stdout)
+			}
+
+			expected = "[INFO] BUILD SUCCESS"
+			if !strings.Contains(stdout.String(), expected) {
+				t.Fatalf("Expected to find \"%s\" in: %s", expected, stdout)
+			}
+		})
 	})
 
 	when("#Init", func() {
