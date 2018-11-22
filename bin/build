@@ -19,3 +19,5 @@ export PATH="$PATH:$BP_DIR/bin"
 
 maven-runner -platform $1 -cache $2 -launch $3 -buildpack "$BP_DIR" \
   -goals "clean dependency:list install" -options "-DskipTests"
+
+releaser -launch $3
