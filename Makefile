@@ -13,3 +13,7 @@ test:
 
 build:
 	@go build -o "bin/maven-runner" ./cmd/maven-runner/...
+	@go build -o "bin/releaser" ./cmd/releaser/...
+
+release: build
+	@tar cvzf java-buildpack-$$(cat VERSION).tgz bin/ profile.d/ buildpack.toml README.md LICENSE

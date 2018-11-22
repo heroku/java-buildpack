@@ -4,7 +4,18 @@ services:
 - docker
 go:
 - 1.11.x
+before_script:
+- export VERSION="$(cat VERSION)"
 script:
 - make test
+- make release
 env:
   GO111MODULE: "on"
+deploy:
+  provider: releases
+  api_key: $GITHUB_OAUTH_TOKEN
+  file:
+    - "java-buildpack-${VERSION}.tgz"
+  skip_cleanup: true
+  on:
+    tags: true
