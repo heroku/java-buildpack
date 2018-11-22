@@ -19,7 +19,7 @@
             </manifest>
           </archive>
           <descriptorRefs>
-            <descriptorRef>uber</descriptorRef>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
         </configuration>
         <executions>

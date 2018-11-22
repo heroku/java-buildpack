@@ -52,7 +52,7 @@ func testJar(t *testing.T, when spec.G, it spec.S) {
 
 			expected := "java -jar target/my-app-1.0-SNAPSHOT-jar-with-dependencies.jar"
 			if processes[0].Command != expected {
-				t.Fatalf(`Did create correct command: got %s, want %s`, processes[0].Command, expected)
+				t.Fatalf(`Did not create correct command: got %s, want %s`, processes[0].Command, expected)
 			}
 		})
 	})
