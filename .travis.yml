@@ -9,6 +9,7 @@ before_script:
 script:
 - make test
 - make release
+- ls -alh java-buildpack-*.tgz
 env:
   GO111MODULE: "on"
 deploy:
