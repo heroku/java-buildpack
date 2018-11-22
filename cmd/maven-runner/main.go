@@ -28,7 +28,6 @@ func init() {
 	cmd.FlagPlatform(&platformDir)
 	cmd.FlagCache(&cacheDir)
 	cmd.FlagLaunch(&launchDir)
-	cmd.FlagLaunch(&options)
 
 	// TODO shouldn't we be able to find this from the binary?
 	cmd.FlagBuildpack(&buildpackDir)
