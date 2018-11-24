@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
 	"os"
 	"fmt"
 
@@ -23,7 +22,7 @@ var (
 
 func init() {
 	flag.StringVar(&goals, "goals", "clean install", "maven goals to run")
-	flag.StringVar(&options, "goals", "", "maven goals to run")
+	flag.StringVar(&options, "options", "", "maven goals to run")
 
 	cmd.FlagPlatform(&platformDir)
 	cmd.FlagCache(&cacheDir)
@@ -43,7 +42,7 @@ func main() {
 }
 
 func runGoals(goals, options, platformDir, cacheDir, launchDir, buildpackDir string) (error) {
-	logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
+	logger := libbuildpack.NewLogger(os.Stdout, os.Stdout)
 
 	platform, err := libbuildpack.NewPlatform(platformDir, logger)
 	if err != nil {
