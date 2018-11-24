@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"io"
-	"os/user"
 	"fmt"
 	"errors"
 
@@ -150,7 +149,7 @@ func (r *Runner) constructSettingsOpts(appDir string) (string, error) {
 func (r *Runner) createMavenRepoDir(appDir string, cache libbuildpack.Cache) (string, error) {
 	m2Dir, err := defaultMavenHome()
 	if err != nil {
-		return "", errors.New("error getting maven home")
+		return "", errors.New(fmt.Sprintf("error getting maven home: %s", err.Error()))
 	}
 
 	m2CacheLayer := cache.Layer("maven_m2")
@@ -189,10 +188,9 @@ func (r *Runner) hasMavenWrapper(appDir string) (bool) {
 }
 
 func defaultMavenHome() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
+	home, found := os.LookupEnv("HOME")
+	if found {
+		return filepath.Join(home, ".m2"), nil
 	}
-
-	return filepath.Join(usr.HomeDir, ".m2"), nil
+	return "", errors.New("could not find user home")
 }
