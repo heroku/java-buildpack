@@ -3,7 +3,6 @@ package main
 import (
 	"path/filepath"
 	"flag"
-	"io/ioutil"
 	"os"
 
 	"github.com/buildpack/libbuildpack"
@@ -30,12 +29,14 @@ func main() {
 }
 
 func writeLaunchMetadata(launchDir string) (error) {
+	println("\n[Releasing]")
+
 	appDir, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
+	logger := libbuildpack.NewLogger(os.Stdout, os.Stdout)
 
 	processes, err := procfile.Parse(filepath.Join(appDir, "Procfile"))
 	if err != nil {
@@ -51,7 +52,7 @@ func writeLaunchMetadata(launchDir string) (error) {
 		return writeMetadata(launchDir, processes, logger)
 	}
 
-	logger.Info("no process types detected")
+	logger.Debug("no process types detected")
 	return nil
 }
 
