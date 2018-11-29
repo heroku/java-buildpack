@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bin/compile <build-dir> <cache-dir> <env-dir>
+# bin/build <platform> <plan> <cache-dir> <launch-dir>
 
 echo ""
 echo "[Java buildpack]"
