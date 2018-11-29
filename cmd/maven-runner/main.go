@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"os"
 	"fmt"
 
@@ -42,7 +43,7 @@ func main() {
 }
 
 func runGoals(goals, options, platformDir, cacheDir, launchDir, buildpackDir string) (error) {
-	logger := libbuildpack.NewLogger(os.Stdout, os.Stdout)
+	logger := libbuildpack.NewLogger(ioutil.Discard, os.Stdout)
 
 	platform, err := libbuildpack.NewPlatform(platformDir, logger)
 	if err != nil {
