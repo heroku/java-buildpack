@@ -4,7 +4,7 @@ SHELL=/bin/bash -o pipefail
 
 GO111MODULE := on
 
-VERSION := $$(cat buildpack.toml | grep version | sed -e 's/version = //g' | xargs)
+VERSION := "v$$(cat buildpack.toml | grep version | sed -e 's/version = //g' | xargs)"
 
 test:
 	-docker rm -f java-buildpack-test
@@ -17,7 +17,11 @@ build:
 	@GOOS=linux go build -o "bin/releaser" ./cmd/releaser/...
 
 clean:
-	-rm -f java-buildpack-v$(VERSION).tgz
+	-rm -f java-buildpack-$(VERSION).tgz
 
-release: clean build
-	@tar cvzf java-buildpack-v$(VERSION).tgz bin/ profile.d/ buildpack.toml README.md LICENSE
+package: clean build
+	@tar cvzf java-buildpack-$(VERSION).tgz bin/ profile.d/ buildpack.toml README.md LICENSE
+
+release:
+	@git tag $(VERSION)
+	@git push --tags
