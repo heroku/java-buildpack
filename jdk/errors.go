@@ -20,5 +20,5 @@ func errorWithCause(message string, cause error) error {
 }
 
 func invalidJdkVersion(version string, url string) error {
-	return errorWithCause(fmt.Sprintf("Invalid JDK version: %s", url), errors.New(fmt.Sprintf("Failed to reach %s", url)))
+	return errorWithCause(fmt.Sprintf("Invalid JDK version: %s", version), errors.New(fmt.Sprintf("Failed to reach %s", url)))
 }
