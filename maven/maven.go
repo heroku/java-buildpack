@@ -45,7 +45,7 @@ func (r *Runner) Run(appDir, defaultGoals string, options []string, cache libbui
 	cmd.Stderr = r.Err
 
 	if err := cmd.Run(); err != nil {
-		return errors.New("failed to run maven command")
+		return failedToRunMaven(err)
 	}
 
 	return nil
@@ -134,10 +134,10 @@ func (r *Runner) constructSettingsOpts(appDir string) (string, error) {
 		cmd.Stderr = r.Err
 
 		if err := cmd.Run(); err != nil {
-			return "", errors.New("failed to download settings.xml from URL")
+			return "", failedToDownloadSettings(err)
 		}
 		if _, err := os.Stat(settingsXml); os.IsNotExist(err) {
-			return "", errors.New(fmt.Sprintf("failed to create %s from URL", settingsXml))
+			return "", failedToDownloadSettingsFromUrl(settingsXml, err)
 		}
 		return fmt.Sprintf("-s %s", settingsXml), nil
 	} else if _, err := os.Stat(filepath.Join(appDir, "settings.xml")); !os.IsNotExist(err) {
@@ -149,14 +149,14 @@ func (r *Runner) constructSettingsOpts(appDir string) (string, error) {
 func (r *Runner) createMavenRepoDir(appDir string, cache libbuildpack.Cache) (string, error) {
 	m2Dir, err := defaultMavenHome()
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("error getting maven home: %s", err.Error()))
+		return "", errors.New(fmt.Sprintf("error getting maven home: %s", err))
 	}
 
 	m2CacheLayer := cache.Layer("maven_m2")
 
 	err = os.MkdirAll(m2CacheLayer.Root, os.ModePerm)
 	if err != nil {
-		return "", errors.New("error creating maven cache layer")
+		return "", errors.New(fmt.Sprintf("error creating maven cache layer: %s", err))
 	}
 
 	return m2Dir, os.Symlink(m2CacheLayer.Root, m2Dir)

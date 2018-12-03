@@ -1,5 +1,11 @@
 .EXPORT_ALL_VARIABLES:
 
+.PHONY: test \
+        build \
+        clean \
+        package \
+        release
+
 SHELL=/bin/bash -o pipefail
 
 GO111MODULE := on

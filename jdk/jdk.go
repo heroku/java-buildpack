@@ -70,7 +70,7 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 	}
 
 	if !IsValidJdkUrl(jdkUrl) {
-		return Jdk{}, errors.New(fmt.Sprintf("Invalid JDK version: %s", jdkUrl))
+		return Jdk{}, invalidJdkVersion(i.Version.Tag, jdkUrl)
 	}
 
 	jdkLayer := launchDir.Layer("jdk")

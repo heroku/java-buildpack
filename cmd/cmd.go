@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"io/ioutil"
+
+	"github.com/fatih/color"
 )
 
 func FlagPlatform(v *string) {
@@ -80,7 +82,12 @@ func Exit(err error) {
 	if err == nil {
 		os.Exit(0)
 	}
-	log.Printf("Error: %s\n", err)
+	color.NoColor = false
+	scanner := bufio.NewScanner(strings.NewReader(err.Error()))
+	for scanner.Scan() {
+		fmt.Fprintln(os.Stderr, color.New(color.FgRed).Sprintf("! %s", scanner.Text()))
+	}
+	fmt.Fprintln(os.Stderr, color.New(color.FgRed).Sprint("!"))
 	if err, ok := err.(*ErrorFail); ok {
 		os.Exit(err.Code)
 	}
