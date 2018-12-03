@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# fail fast
+set -eo pipefail
+
 BP_DIR="${1:?}"
 
 install_go() {
@@ -20,6 +23,11 @@ install_go() {
   tar -C "$go_dir" -xzf "$go_tgz"
 }
 
+build_cmd() {
+  local cmd=${1:?}
+  go build -o "bin/${cmd}" ./cmd/${cmd}/...
+  chmod +x "bin/${cmd}"
+}
 
 go_dir="$(mktemp -d)" # TODO put it in the cache
 install_go "$go_dir"
@@ -27,4 +35,6 @@ install_go "$go_dir"
 export PATH="$PATH:${go_dir}/go/bin"
 
 cd "$BP_DIR"
-go build -o "bin/maven-runner" ./cmd/maven-runner/...
+build_cmd "jdk-installer"
+build_cmd "maven-runner"
+build_cmd "releaser"

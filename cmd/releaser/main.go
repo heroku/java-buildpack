@@ -29,8 +29,6 @@ func main() {
 }
 
 func writeLaunchMetadata(launchDir string) (error) {
-	println("\n[Releasing]")
-
 	appDir, err := os.Getwd()
 	if err != nil {
 		return err

@@ -5,23 +5,24 @@ import (
 	"io/ioutil"
 	"os"
 	"github.com/buildpack/libbuildpack"
-	"github.com/heroku/java-buildpack/maven"
 	"github.com/heroku/java-buildpack/cmd"
+	"github.com/heroku/java-buildpack/jdk"
 )
 
 var (
-	goals        string
-	options      string
 	platformDir  string
 	cacheDir     string
+	launchDir    string
+	buildpackDir string
 )
 
 func init() {
-	flag.StringVar(&goals, "goals", "clean install", "maven goals to run")
-	flag.StringVar(&options, "options", "", "maven goals to run")
-
 	cmd.FlagPlatform(&platformDir)
 	cmd.FlagCache(&cacheDir)
+	cmd.FlagLaunch(&launchDir)
+
+	// TODO shouldn't we be able to find this from the binary?
+	cmd.FlagBuildpack(&buildpackDir)
 }
 
 func main() {
@@ -30,10 +31,10 @@ func main() {
 		cmd.Exit(cmd.FailCode(cmd.CodeInvalidArgs, "parse arguments"))
 	}
 
-	cmd.Exit(runGoals(goals, options, platformDir, cacheDir))
+	cmd.Exit(runGoals(platformDir, cacheDir, launchDir, buildpackDir))
 }
 
-func runGoals(goals, options, platformDir, cacheDir string) (error) {
+func runGoals(platformDir, cacheDir, launchDir, buildpackDir string) (error) {
 	logger := libbuildpack.NewLogger(ioutil.Discard, os.Stdout)
 
 	platform, err := libbuildpack.NewPlatform(platformDir, logger)
@@ -44,21 +45,24 @@ func runGoals(goals, options, platformDir, cacheDir string) (error) {
 	platform.Envs.SetAll()
 
 	cache := libbuildpack.Cache{Root: cacheDir, Logger: logger}
+	launch := libbuildpack.Launch{Root: launchDir, Logger: logger}
 
 	appDir, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	runner := maven.Runner{
-		In:  []byte{},
-		Out: os.Stdout,
-		Err: os.Stderr,
+	jdkInstaller := jdk.Installer{
+		In:           []byte{},
+		Out:          os.Stdout,
+		Err:          os.Stderr,
+		BuildpackDir: buildpackDir,
 	}
-
-	if err = runner.Run(appDir, goals, []string{options}, cache); err != nil {
+	jdkInstall, err := jdkInstaller.Install(appDir, cache, launch)
+	if err != nil {
 		return err
 	}
+	println("Java", jdkInstall.Version.Tag, "installed")
 
 	return nil
 }

@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 # bin/build <platform> <plan> <cache-dir> <launch-dir>
 
-echo ""
-echo "[Java buildpack]"
+status() {
+  local color="\033[0;35m"
+  local no_color="\033[0m"
+  echo -e "\n${color}[${1:-""}]${no_color}"
+}
+
+status "Java buildpack"
 
 # fail fast
 set -eo pipefail
 
 BP_DIR=$(cd $(dirname $0)/..; pwd) # absolute path
 
-if [ ! -f "$BP_DIR/bin/maven-runner" ]; then
+if [ ! -f "$BP_DIR/bin/jdk-installer" ] || [ ! -f "$BP_DIR/bin/maven-runner" ]; then
   echo "Bootstrapping buildpack binaries"
   bash "$BP_DIR/bin/bootstrap" "$BP_DIR"
   echo "Successfully compiled buildpack"
@@ -17,7 +22,15 @@ fi
 
 export PATH="$PATH:$BP_DIR/bin"
 
-maven-runner -platform $1 -cache $3 -launch $4 -buildpack "$BP_DIR" \
-  -goals "clean dependency:list install" -options "-DskipTests"
+status "Installing JDK"
+jdk-installer -platform $1 -cache $3 -launch $4 -buildpack "$BP_DIR"
 
+# TODO the JVM buildpack should handle this
+export JAVA_HOME="${4}/jdk"
+export PATH="${JAVA_HOME}/bin:$PATH"
+
+status "Running Maven"
+maven-runner -platform $1 -cache $3 -goals "clean dependency:list install" -options "-DskipTests"
+
+status "Releasing"
 releaser -launch $4
