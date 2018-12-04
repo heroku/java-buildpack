@@ -4,16 +4,17 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
+
 	"github.com/buildpack/libbuildpack"
-	"github.com/heroku/java-buildpack/maven"
 	"github.com/heroku/java-buildpack/cmd"
+	"github.com/heroku/java-buildpack/maven"
 )
 
 var (
-	goals        string
-	options      string
-	platformDir  string
-	cacheDir     string
+	goals       string
+	options     string
+	platformDir string
+	cacheDir    string
 )
 
 func init() {
@@ -33,7 +34,7 @@ func main() {
 	cmd.Exit(runGoals(goals, options, platformDir, cacheDir))
 }
 
-func runGoals(goals, options, platformDir, cacheDir string) (error) {
+func runGoals(goals, options, platformDir, cacheDir string) error {
 	logger := libbuildpack.NewLogger(ioutil.Discard, os.Stdout)
 
 	platform, err := libbuildpack.NewPlatform(platformDir, logger)

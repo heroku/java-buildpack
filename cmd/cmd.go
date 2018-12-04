@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
-	"io/ioutil"
 
 	"github.com/fatih/color"
 )

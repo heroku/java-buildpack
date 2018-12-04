@@ -1,12 +1,12 @@
 package util
 
 import (
-	"path/filepath"
-	"io/ioutil"
-	"strings"
-	"fmt"
 	"archive/zip"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
 
 	"github.com/buildpack/libbuildpack"
 )

@@ -1,14 +1,14 @@
 package util_test
 
 import (
-	"os"
 	"io/ioutil"
+	"os"
 	"testing"
 
-	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
 	"github.com/buildpack/libbuildpack"
 	"github.com/heroku/java-buildpack/util"
+	"github.com/sclevine/spec"
+	"github.com/sclevine/spec/report"
 	"path/filepath"
 )
 
@@ -58,8 +58,7 @@ func testJar(t *testing.T, when spec.G, it spec.S) {
 	})
 }
 
-
-func fixture(name string) (string) {
+func fixture(name string) string {
 	wd, _ := os.Getwd()
 	return filepath.Join(wd, "..", "test", "fixtures", name)
 }

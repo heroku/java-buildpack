@@ -1,10 +1,10 @@
 package main
 
 import (
-	"path/filepath"
 	"flag"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/buildpack/libbuildpack"
 	"github.com/heroku/java-buildpack/cmd"
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	launchDir   string
+	launchDir string
 )
 
 func init() {
@@ -29,7 +29,7 @@ func main() {
 	cmd.Exit(writeLaunchMetadata(launchDir))
 }
 
-func writeLaunchMetadata(launchDir string) (error) {
+func writeLaunchMetadata(launchDir string) error {
 	appDir, err := os.Getwd()
 	if err != nil {
 		return err

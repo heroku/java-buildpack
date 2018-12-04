@@ -1,11 +1,12 @@
 package procfile
 
 import (
-	"gopkg.in/yaml.v2"
-	"github.com/buildpack/libbuildpack"
-	"os"
-	"io/ioutil"
 	"errors"
+	"io/ioutil"
+	"os"
+
+	"github.com/buildpack/libbuildpack"
+	"gopkg.in/yaml.v2"
 )
 
 func Parse(file string) ([]libbuildpack.Process, error) {

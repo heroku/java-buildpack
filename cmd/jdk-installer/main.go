@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
+
 	"github.com/buildpack/libbuildpack"
 	"github.com/heroku/java-buildpack/cmd"
 	"github.com/heroku/java-buildpack/jdk"
@@ -34,7 +35,7 @@ func main() {
 	cmd.Exit(runGoals(platformDir, cacheDir, launchDir, buildpackDir))
 }
 
-func runGoals(platformDir, cacheDir, launchDir, buildpackDir string) (error) {
+func runGoals(platformDir, cacheDir, launchDir, buildpackDir string) error {
 	logger := libbuildpack.NewLogger(ioutil.Discard, os.Stdout)
 
 	platform, err := libbuildpack.NewPlatform(platformDir, logger)

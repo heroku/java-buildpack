@@ -1,17 +1,17 @@
 package maven_test
 
 import (
-	"io/ioutil"
-	"strings"
-	"path/filepath"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/buildpack/libbuildpack"
+	"github.com/heroku/java-buildpack/maven"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
-	"github.com/heroku/java-buildpack/maven"
-	"github.com/buildpack/libbuildpack"
 )
 
 func TestMaven(t *testing.T) {
@@ -138,7 +138,7 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 	})
 }
 
-func hasOption(opts []string, opt string) (bool) {
+func hasOption(opts []string, opt string) bool {
 	for _, b := range opts {
 		if b == opt {
 			return true
@@ -147,7 +147,7 @@ func hasOption(opts []string, opt string) (bool) {
 	return false
 }
 
-func fixture(name string) (string) {
+func fixture(name string) string {
 	wd, _ := os.Getwd()
 	return filepath.Join(wd, "..", "test", "fixtures", name)
 }

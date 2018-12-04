@@ -1,16 +1,16 @@
 package jdk_test
 
 import (
-	"os"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/buildpack/libbuildpack"
+	"github.com/google/go-cmp/cmp"
+	"github.com/heroku/java-buildpack/jdk"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
-	"github.com/heroku/java-buildpack/jdk"
-	"github.com/google/go-cmp/cmp"
-	"github.com/buildpack/libbuildpack"
 )
 
 func TestJdk(t *testing.T) {
@@ -20,7 +20,7 @@ func TestJdk(t *testing.T) {
 
 func testJdk(t *testing.T, when spec.G, it spec.S) {
 	var (
-		launch    libbuildpack.Launch
+		launch libbuildpack.Launch
 	)
 
 	it.Before(func() {
@@ -38,11 +38,11 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 
 	when("#WriteMetadata", func() {
 		it("should detect jdk version", func() {
-			expected := jdk.Jdk {
+			expected := jdk.Jdk{
 				Home: launch.Root,
-				Version: jdk.Version {
-					Major: 8,
-					Tag: "1.8.0_191",
+				Version: jdk.Version{
+					Major:  8,
+					Tag:    "1.8.0_191",
 					Vendor: "openjdk",
 				},
 			}
@@ -305,7 +305,7 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 	})
 }
 
-func fixture(name string) (string) {
+func fixture(name string) string {
 	wd, _ := os.Getwd()
 	return filepath.Join(wd, "..", "test", "fixtures", name)
 }

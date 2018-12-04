@@ -1,8 +1,8 @@
 package util
 
 import (
-	"os"
 	"bufio"
+	"os"
 	"strings"
 )
 

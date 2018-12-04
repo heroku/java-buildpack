@@ -5,17 +5,17 @@ package jdk_test
 import (
 	"crypto/sha256"
 	"fmt"
-	"os"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/buildpack/libbuildpack"
+	"github.com/heroku/java-buildpack/jdk"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
-	"github.com/heroku/java-buildpack/jdk"
-	"github.com/buildpack/libbuildpack"
 )
 
 func TestIntegrationJdk(t *testing.T) {
@@ -34,7 +34,7 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 
 		os.Setenv("STACK", "heroku-18")
 
-		cacerts, err := ioutil.ReadFile(filepath.Join(wd, "..", "test", "fixtures", "cacerts"));
+		cacerts, err := ioutil.ReadFile(filepath.Join(wd, "..", "test", "fixtures", "cacerts"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -56,9 +56,9 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 		os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(wd, "..", "bin")))
 
 		installer = &jdk.Installer{
-			In:  []byte{},
-			Out: os.Stdout,
-			Err: os.Stderr,
+			In:           []byte{},
+			Out:          os.Stdout,
+			Err:          os.Stderr,
 			BuildpackDir: filepath.Join(wd, ".."),
 		}
 

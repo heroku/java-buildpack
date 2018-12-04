@@ -1,15 +1,15 @@
 package procfile_test
 
 import (
-	"os"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/buildpack/libbuildpack"
+	"github.com/heroku/java-buildpack/procfile"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
-	"github.com/buildpack/libbuildpack"
-	"path/filepath"
-	"github.com/heroku/java-buildpack/procfile"
 )
 
 func TestProcfile(t *testing.T) {
@@ -67,8 +67,7 @@ func findProcessType(processes []libbuildpack.Process, name string) (bool, libbu
 	return false, libbuildpack.Process{}
 }
 
-
-func fixture(name string) (string) {
+func fixture(name string) string {
 	wd, _ := os.Getwd()
 	return filepath.Join(wd, "..", "test", "fixtures", name)
 }

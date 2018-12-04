@@ -1,19 +1,19 @@
 package jdk
 
 import (
-	"io"
-	"io/ioutil"
-	"path/filepath"
-	"os"
-	"regexp"
-	"strconv"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strconv"
 
-	"github.com/heroku/java-buildpack/util"
 	"github.com/buildpack/libbuildpack"
+	"github.com/heroku/java-buildpack/util"
 )
 
 type Installer struct {
@@ -49,7 +49,7 @@ var (
 	}
 )
 
-func (i *Installer) Init(appDir string) (error) {
+func (i *Installer) Init(appDir string) error {
 	v, err := i.detectVersion(appDir)
 	if err != nil {
 		return err
@@ -164,13 +164,13 @@ func InstallCerts(jdk Jdk) error {
 }
 
 func CreateProfileScripts(buildpackDir string, layer libbuildpack.LaunchLayer) error {
-	jvmProfiled, err := ioutil.ReadFile(filepath.Join(buildpackDir, "profile.d", "jvm.sh"));
+	jvmProfiled, err := ioutil.ReadFile(filepath.Join(buildpackDir, "profile.d", "jvm.sh"))
 	if err != nil {
 		return err
 	}
 	layer.WriteProfile("jvm.sh", string(jvmProfiled))
 
-	jdbcProfiled, err := ioutil.ReadFile(filepath.Join(buildpackDir, "profile.d", "jdbc.sh"));
+	jdbcProfiled, err := ioutil.ReadFile(filepath.Join(buildpackDir, "profile.d", "jdbc.sh"))
 	if err != nil {
 		return err
 	}
@@ -272,7 +272,7 @@ func IsValidJdkUrl(url string) bool {
 	return res.StatusCode < 300
 }
 
-func parseMajorVersion(tag string) (int) {
+func parseMajorVersion(tag string) int {
 	if m := regexp.MustCompile("^1\\.7").FindAllStringSubmatch(tag, -1); len(m) == 1 {
 		return 7
 	} else if m := regexp.MustCompile("^1\\.8").FindAllStringSubmatch(tag, -1); len(m) == 1 {

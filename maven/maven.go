@@ -1,13 +1,13 @@
 package maven
 
 import (
-	"path/filepath"
 	"bytes"
+	"errors"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
-	"io"
-	"fmt"
-	"errors"
+	"path/filepath"
 
 	"github.com/buildpack/libbuildpack"
 )
@@ -20,7 +20,7 @@ type Runner struct {
 	Goals    string
 }
 
-func (r *Runner) Run(appDir, defaultGoals string, options []string, cache libbuildpack.Cache) (error) {
+func (r *Runner) Run(appDir, defaultGoals string, options []string, cache libbuildpack.Cache) error {
 	r.Goals = defaultGoals
 	r.Options = options
 
@@ -52,7 +52,7 @@ func (r *Runner) Run(appDir, defaultGoals string, options []string, cache libbui
 }
 
 // This function should remain free of side-effects to the filesystem
-func (r *Runner) Init(appDir string, cache libbuildpack.Cache) (error) {
+func (r *Runner) Init(appDir string, cache libbuildpack.Cache) error {
 	mvn, err := r.resolveMavenCommand(appDir, cache)
 	if err != nil {
 		return err
@@ -162,18 +162,18 @@ func (r *Runner) createMavenRepoDir(appDir string, cache libbuildpack.Cache) (st
 	return m2Dir, os.Symlink(m2CacheLayer.Root, m2Dir)
 }
 
-func (r *Runner) removeMavenRepoSymlink(m2Dir string) (error) {
+func (r *Runner) removeMavenRepoSymlink(m2Dir string) error {
 	fi, err := os.Lstat(m2Dir)
 	if err != nil {
 		return err
 	}
-	if fi.Mode() & os.ModeSymlink == os.ModeSymlink {
+	if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
 		return os.Remove(m2Dir)
 	}
 	return nil
 }
 
-func (r *Runner) hasMavenWrapper(appDir string) (bool) {
+func (r *Runner) hasMavenWrapper(appDir string) bool {
 	_, err := os.Stat(filepath.Join(appDir, "mvnw"))
 	if !os.IsNotExist(err) {
 		_, err = os.Stat(filepath.Join(appDir, ".mvn", "wrapper", "maven-wrapper.jar"))

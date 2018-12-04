@@ -1,8 +1,8 @@
 package maven
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 )
 
 const (

@@ -3,20 +3,20 @@
 package maven_test
 
 import (
-	"path/filepath"
 	"bytes"
 	"fmt"
-	"os"
 	"io"
 	"io/ioutil"
-	"testing"
+	"os"
+	"path/filepath"
 	"strings"
+	"testing"
 
-	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
 	"github.com/buildpack/libbuildpack"
 	"github.com/heroku/java-buildpack/jdk"
 	"github.com/heroku/java-buildpack/maven"
+	"github.com/sclevine/spec"
+	"github.com/sclevine/spec/report"
 )
 
 func TestIntegrationMaven(t *testing.T) {
@@ -170,9 +170,9 @@ func installGlobalJdk(installDir string) error {
 	jdkLaunch := libbuildpack.Launch{Root: installDir, Logger: logger}
 
 	jdkInstaller := jdk.Installer{
-		In:  []byte{},
-		Out: os.Stdout,
-		Err: os.Stderr,
+		In:           []byte{},
+		Out:          os.Stdout,
+		Err:          os.Stderr,
 		BuildpackDir: filepath.Join(wd, ".."),
 	}
 	jdkInstall, err := jdkInstaller.Install("/", jdkCache, jdkLaunch)
