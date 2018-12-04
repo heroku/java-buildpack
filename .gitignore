@@ -3,6 +3,7 @@
 
 bin/maven-runner
 bin/releaser
+bin/jdk-installer
 
 java-buildpack*.tgz
 
