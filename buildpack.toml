@@ -1,6 +1,6 @@
 [buildpack]
 id = "heroku/java"
-version = "0.3"
+version = "0.4"
 name = "Java"
 
 [[stacks]]
