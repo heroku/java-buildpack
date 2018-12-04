@@ -23,11 +23,10 @@ calculate_java_memory_opts() {
   esac
 }
 
-export JAVA_HOME="$HOME/.jdk"
+export JAVA_HOME="$(dirname $(dirname $(which java)))"
 export LD_LIBRARY_PATH="$JAVA_HOME/jre/lib/amd64/server:$LD_LIBRARY_PATH"
-export PATH="$HOME/.heroku/bin:$JAVA_HOME/bin:$PATH"
 
-if cat "$HOME/.jdk/release" | grep -q '^JAVA_VERSION="1[0-1]'; then
+if cat "$JAVA_HOME/release" | grep -q '^JAVA_VERSION="1[0-2]'; then
   default_java_mem_opts="$(calculate_java_memory_opts "-XX:+UseContainerSupport")"
 else
   default_java_mem_opts="$(calculate_java_memory_opts | sed 's/^ //')"
