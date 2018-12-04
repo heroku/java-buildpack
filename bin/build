@@ -18,6 +18,9 @@ if [ ! -f "$BP_DIR/bin/jdk-installer" ] || [ ! -f "$BP_DIR/bin/maven-runner" ]; 
   echo "Bootstrapping buildpack binaries"
   bash "$BP_DIR/bin/bootstrap" "$BP_DIR"
   echo "Successfully compiled buildpack"
+else
+  VERSION="$(cat $BP_DIR/buildpack.toml | grep version | sed -e 's/version = //g' | xargs)"
+  echo "Version ${VERSION}"
 fi
 
 export PATH="$PATH:$BP_DIR/bin"
