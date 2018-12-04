@@ -31,4 +31,4 @@ package: clean build
 
 release:
 	@git tag $(VERSION)
-	@git push --tags
+	@git push --tags origin master
