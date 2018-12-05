@@ -6,10 +6,11 @@ install_maven() {
   local maven_url="https://apache.org/dist/maven/maven-3/${maven_version}/binaries/apache-maven-${maven_version}-bin.tar.gz"
   local maven_dir="$install_dir/maven"
 
-  rm -rf "$maven_dir"
-  mkdir -p "$maven_dir"
-  curl --retry 3 -sfL "$maven_url" | tar pxz -C "$maven_dir" --strip-components=1
-  echo -e "version = \"$maven_version\"\nurl = \"$maven_url\"" > "$install_dir"/maven.toml
+  rm -rf "$install_dir"
+  mkdir -p "$install_dir"
+  curl --retry 3 -sfL "$maven_url" | tar pxz -C "$install_dir" --strip-components=1
+  chmod +x "$install_dir/bin/mvn"
+  echo -e "version = \"$maven_version\"\nurl = \"$maven_url\"" > "${install_dir}.toml"
 }
 
 install_maven "$1" "${2:-"3.5.4"}"
