@@ -94,14 +94,16 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 			appDir = fixture("app_with_wrapper")
 
 			it("should not use the defaults", func() {
-				expected := "clean package"
-				os.Setenv("MAVEN_CUSTOM_GOALS", expected)
+				expected := []string{"clean",  "package"}
+				os.Setenv("MAVEN_CUSTOM_GOALS", strings.Join(expected, " "))
 
 				if err := runner.Init(appDir, cache); err != nil {
 					t.Fatal(err)
 				}
 
-				if runner.Goals != expected {
+				if len(runner.Goals) != len(expected) ||
+					runner.Goals[0] != expected[0] ||
+					runner.Goals[1] != expected[1] {
 					t.Fatalf(`runner goals did not use environment variable: got %s, want %s`, runner.Goals, expected)
 				}
 			})

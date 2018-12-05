@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/buildpack/libbuildpack"
 )
@@ -17,12 +18,12 @@ type Runner struct {
 	Out, Err io.Writer
 	Command  string
 	Options  []string
-	Goals    string
+	Goals    []string
 }
 
 func (r *Runner) Run(appDir, defaultGoals string, options []string, cache libbuildpack.Cache) error {
-	r.Goals = defaultGoals
-	r.Options = options
+	r.Goals = parseGoals(defaultGoals)
+	r.Options = trimArgs(options)
 
 	err := r.Init(appDir, cache)
 	if err != nil {
@@ -35,8 +36,9 @@ func (r *Runner) Run(appDir, defaultGoals string, options []string, cache libbui
 	}
 	defer r.removeMavenRepoSymlink(m2Dir)
 
-	mavenArgs := append(r.Options, r.Goals)
+	mavenArgs := append(r.Options, r.Goals...)
 
+	fmt.Printf("$ mvn %s %s\n", strings.Join(r.Options, " "), strings.Join(r.Goals, " "))
 	cmd := exec.Command(r.Command, mavenArgs...)
 	cmd.Env = os.Environ()
 	cmd.Dir = appDir
@@ -93,9 +95,9 @@ func (r *Runner) installMaven(installDir string) (string, error) {
 	return filepath.Join(installDir, "bin", "mvn"), cmd.Run()
 }
 
-func (r *Runner) constructGoals(defaultGoals string) string {
+func (r *Runner) constructGoals(defaultGoals []string) []string {
 	if goals, isSet := os.LookupEnv("MAVEN_CUSTOM_GOALS"); isSet {
-		return goals
+		return parseGoals(goals)
 	}
 	return defaultGoals
 }
@@ -103,7 +105,7 @@ func (r *Runner) constructGoals(defaultGoals string) string {
 func (r *Runner) constructOptions(appDir string) ([]string, error) {
 	opts := []string{
 		"-B",
-		"-DoutputFile=target/mvn-dependency-list.log",
+		"-DoutputFile=target/dependencies.txt",
 	}
 
 	opts = append(opts, r.Options...)
@@ -116,10 +118,10 @@ func (r *Runner) constructOptions(appDir string) ([]string, error) {
 	opts = append(opts, settingsOpt)
 
 	if customOpts, isSet := os.LookupEnv("MAVEN_CUSTOM_OPTS"); isSet {
-		opts = append(opts, customOpts)
+		opts = append(opts, parseGoals(customOpts)...)
 	}
 
-	return opts, nil
+	return trimArgs(opts), nil
 }
 
 func (r *Runner) constructSettingsOpts(appDir string) (string, error) {
@@ -193,4 +195,19 @@ func defaultMavenHome() (string, error) {
 		return filepath.Join(home, ".m2"), nil
 	}
 	return "", errors.New("could not find user home")
+}
+
+func parseGoals(goals string) []string {
+	return trimArgs(strings.Split(goals, " "))
+}
+
+func trimArgs(args []string) []string {
+	var parsedArgs []string
+	for _, rawArg := range args {
+		arg := strings.TrimSpace(rawArg)
+		if arg != "" {
+			parsedArgs = append(parsedArgs, arg)
+		}
+	}
+	return parsedArgs
 }
