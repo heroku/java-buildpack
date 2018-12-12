@@ -14,7 +14,7 @@ VERSION := "v$$(cat buildpack.toml | grep version | sed -e 's/version = //g' | x
 
 test:
 	-docker rm -f java-buildpack-test
-	@docker create --name java-buildpack-test --workdir /app golang:1.11 bash -c "go test ./... -tags=integration"
+	@docker create --name java-buildpack-test --workdir /app golang:1.11.2 bash -c "go test ./... -tags=integration"
 	@docker cp . java-buildpack-test:/app
 	@docker start -a java-buildpack-test
 

@@ -25,8 +25,11 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
-		log := logger.DefaultLogger()
-		layersDir = layers.NewLayers(os.TempDir(), log)
+		root, err := ioutil.TempDir("", "layers")
+		if err != nil {
+			t.Fatal(err)
+		}
+		layersDir = layers.NewLayers(root, logger.DefaultLogger())
 	})
 
 	it.After(func() {

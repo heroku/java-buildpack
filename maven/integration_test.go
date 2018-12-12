@@ -48,7 +48,11 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 		wd, _ := os.Getwd()
 		os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(wd, "..", "bin")))
 
-		layersDir = layers.NewLayers(os.TempDir(), logger.DefaultLogger())
+		root, err := ioutil.TempDir("", "layers")
+		if err != nil {
+			t.Fatal(err)
+		}
+		layersDir = layers.NewLayers(root, logger.DefaultLogger())
 
 		stdout, stderr = &bytes.Buffer{}, &bytes.Buffer{}
 		runner = &maven.Runner{

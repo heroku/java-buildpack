@@ -2,6 +2,7 @@ package maven_test
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,7 +29,11 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 	it.Before(func() {
 		log := logger.DefaultLogger()
 
-		layersDir = layers.NewLayers(os.TempDir(), log)
+		root, err := ioutil.TempDir("", "layers")
+		if err != nil {
+			t.Fatal(err)
+		}
+		layersDir = layers.NewLayers(root, log)
 
 		runner = &maven.Runner{
 			In:  []byte{},
