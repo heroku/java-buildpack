@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/buildpack/libbuildpack"
+	"github.com/buildpack/libbuildpack/layers"
 	"github.com/heroku/java-buildpack/util"
 )
 
@@ -60,7 +60,7 @@ func (i *Installer) Init(appDir string) error {
 	return nil
 }
 
-func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir libbuildpack.Launch) (Jdk, error) {
+func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jdk, error) {
 	i.Init(appDir)
 	// check the build plan to see if another JDK has already been installed?
 
@@ -73,7 +73,7 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 		return Jdk{}, invalidJdkVersion(i.Version.Tag, jdkUrl)
 	}
 
-	jdkLayer := launchDir.Layer("jdk")
+	jdkLayer := layersDir.Layer("jdk")
 	jdk := Jdk{
 		Home:    jdkLayer.Root,
 		Version: i.Version,
@@ -105,11 +105,11 @@ func (i *Installer) Install(appDir string, cache libbuildpack.Cache, launchDir l
 	return jdk, nil
 }
 
-func (jdk Jdk) WriteMetadata(layer libbuildpack.LaunchLayer) error {
-	return layer.WriteMetadata(jdk)
+func (jdk Jdk) WriteMetadata(layer layers.Layer) error {
+	return layer.WriteMetadata(jdk, layers.Launch)
 }
 
-func (i *Installer) fetchJdk(jdkUrl string, layer libbuildpack.LaunchLayer) error {
+func (i *Installer) fetchJdk(jdkUrl string, layer layers.Layer) error {
 	cmd := exec.Command(filepath.Join("jdk-fetcher"), jdkUrl, layer.Root)
 	cmd.Env = os.Environ()
 	cmd.Stdout = i.Out
@@ -118,7 +118,7 @@ func (i *Installer) fetchJdk(jdkUrl string, layer libbuildpack.LaunchLayer) erro
 	return cmd.Run()
 }
 
-func (i *Installer) applyJdkOverlay(layer libbuildpack.LaunchLayer, appDir string) error {
+func (i *Installer) applyJdkOverlay(layer layers.Layer, appDir string) error {
 	cmd := exec.Command(filepath.Join("jdk-overlay"), layer.Root, filepath.Join(appDir, ".jdk-overlay"))
 	cmd.Env = os.Environ()
 	cmd.Stdout = i.Out
@@ -163,7 +163,7 @@ func InstallCerts(jdk Jdk) error {
 	return nil
 }
 
-func CreateProfileScripts(buildpackDir string, layer libbuildpack.LaunchLayer) error {
+func CreateProfileScripts(buildpackDir string, layer layers.Layer) error {
 	jvmProfiled, err := ioutil.ReadFile(filepath.Join(buildpackDir, "profile.d", "jvm.sh"))
 	if err != nil {
 		return err

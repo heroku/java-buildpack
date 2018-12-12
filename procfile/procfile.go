@@ -5,11 +5,11 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/buildpack/libbuildpack"
+	"github.com/buildpack/libbuildpack/layers"
 	"gopkg.in/yaml.v2"
 )
 
-func Parse(file string) ([]libbuildpack.Process, error) {
+func Parse(file string) (layers.Processes, error) {
 	if _, err := os.Stat(file); !os.IsNotExist(err) {
 		data, err := ioutil.ReadFile(file)
 		if err != nil {
@@ -20,9 +20,9 @@ func Parse(file string) ([]libbuildpack.Process, error) {
 			if err != nil {
 				return nil, errors.New("failed to parse Procfile")
 			} else {
-				processes := []libbuildpack.Process{}
+				processes := layers.Processes{}
 				for name, command := range processTypes {
-					processes = append(processes, libbuildpack.Process{
+					processes = append(processes, layers.Process{
 						Type:    name,
 						Command: command,
 					})

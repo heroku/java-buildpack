@@ -6,7 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/buildpack/libbuildpack"
+	"github.com/buildpack/libbuildpack/layers"
+	"github.com/buildpack/libbuildpack/logger"
 	"github.com/google/go-cmp/cmp"
 	"github.com/heroku/java-buildpack/jdk"
 	"github.com/sclevine/spec"
@@ -20,26 +21,25 @@ func TestJdk(t *testing.T) {
 
 func testJdk(t *testing.T, when spec.G, it spec.S) {
 	var (
-		launch libbuildpack.Launch
+		layersDir layers.Layers
 	)
 
 	it.Before(func() {
-		launchRoot, err := ioutil.TempDir("", "launch")
+		root, err := ioutil.TempDir("", "layers")
 		if err != nil {
 			t.Fatal(err)
 		}
-		logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
-		launch = libbuildpack.Launch{Root: launchRoot, Logger: logger}
+		layersDir = layers.NewLayers(root, logger.DefaultLogger())
 	})
 
 	it.After(func() {
-		os.RemoveAll(launch.Root)
+		os.RemoveAll(layersDir.Root)
 	})
 
 	when("#WriteMetadata", func() {
 		it("should detect jdk version", func() {
 			expected := jdk.Jdk{
-				Home: launch.Root,
+				Home: layersDir.Root,
 				Version: jdk.Version{
 					Major:  8,
 					Tag:    "1.8.0_191",
@@ -47,12 +47,12 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 				},
 			}
 
-			if err := expected.WriteMetadata(launch.Layer("jdk")); err != nil {
+			if err := expected.WriteMetadata(layersDir.Layer("jdk")); err != nil {
 				t.Fatal(err)
 			}
 
 			var actual jdk.Jdk
-			if err := launch.Layer("jdk").ReadMetadata(&actual); err != nil {
+			if err := layersDir.Layer("jdk").ReadMetadata(&actual); err != nil {
 				t.Fatal("Layer metadata was not written")
 			}
 
@@ -79,8 +79,7 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 	var (
 		installer *jdk.Installer
-		cache     libbuildpack.Cache
-		launch    libbuildpack.Launch
+		layersDir layers.Layers
 	)
 
 	it.Before(func() {
@@ -92,25 +91,16 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 			Err: os.Stderr,
 		}
 
-		logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
-
-		cacheRoot, err := ioutil.TempDir("", "cache")
+		layersRoot, err := ioutil.TempDir("", "layers")
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		launchRoot, err := ioutil.TempDir("", "launch")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		cache = libbuildpack.Cache{Root: cacheRoot, Logger: logger}
-		launch = libbuildpack.Launch{Root: launchRoot, Logger: logger}
+		log := logger.DefaultLogger()
+		layersDir = layers.NewLayers(layersRoot, log)
 	})
 
 	it.After(func() {
-		os.RemoveAll(cache.Root)
-		os.RemoveAll(launch.Root)
+		os.RemoveAll(layersDir.Root)
 	})
 
 	when("#Init", func() {

@@ -4,14 +4,13 @@ import (
 	"archive/zip"
 	"errors"
 	"fmt"
+	"github.com/buildpack/libbuildpack/layers"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
-
-	"github.com/buildpack/libbuildpack"
 )
 
-func FindExecutableJar(appDir string) ([]libbuildpack.Process, error) {
+func FindExecutableJar(appDir string) (layers.Processes, error) {
 	if jars, err := filepath.Glob(filepath.Join(appDir, "target", "*.jar")); err == nil {
 		for _, jar := range jars {
 			// if the Jar has a Main class
@@ -34,12 +33,12 @@ func FindExecutableJar(appDir string) ([]libbuildpack.Process, error) {
 									}
 									command = fmt.Sprintf("%s -jar target/%s", command, filepath.Base(jar))
 
-									webProcess := libbuildpack.Process{
+									webProcess := layers.Process{
 										Type:    "web",
 										Command: command,
 									}
 
-									return []libbuildpack.Process{webProcess}, nil
+									return layers.Processes{webProcess}, nil
 								}
 							}
 						}

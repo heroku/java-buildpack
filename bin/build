@@ -26,14 +26,14 @@ fi
 export PATH="$PATH:$BP_DIR/bin"
 
 status "Installing JDK"
-jdk-installer -platform $1 -cache $3 -launch $4 -buildpack "$BP_DIR"
+jdk-installer -layers $1 -platform $2 -buildpack "$BP_DIR"
 
 # TODO the JVM buildpack should handle this
-export JAVA_HOME="${4}/jdk"
+export JAVA_HOME="${1}/jdk"
 export PATH="${JAVA_HOME}/bin:$PATH"
 
 status "Running Maven"
-maven-runner -platform $1 -cache $3 -goals "clean dependency:list install" -options "-DskipTests"
+maven-runner -layers $1 -platform $2 -goals "clean dependency:list install" -options "-DskipTests"
 
 status "Releasing"
-releaser -launch $4
+releaser -layers $1

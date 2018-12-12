@@ -1,11 +1,9 @@
 package util_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
-	"github.com/buildpack/libbuildpack"
 	"github.com/heroku/java-buildpack/util"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -17,23 +15,6 @@ func TestJar(t *testing.T) {
 }
 
 func testJar(t *testing.T, when spec.G, it spec.S) {
-	var (
-		launch libbuildpack.Launch
-	)
-
-	it.Before(func() {
-		launchRoot, err := ioutil.TempDir("", "launch")
-		if err != nil {
-			t.Fatal(err)
-		}
-		logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
-		launch = libbuildpack.Launch{Root: launchRoot, Logger: logger}
-	})
-
-	it.After(func() {
-		os.RemoveAll(launch.Root)
-	})
-
 	when("#FindExecutableJar", func() {
 		it("should find an executable jar", func() {
 			processes, err := util.FindExecutableJar(fixture("app_with_exec_jar"))
