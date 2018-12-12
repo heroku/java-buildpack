@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/buildpack/libbuildpack"
+	"github.com/buildpack/libbuildpack/layers"
 )
 
 type Runner struct {
@@ -21,16 +21,16 @@ type Runner struct {
 	Goals    []string
 }
 
-func (r *Runner) Run(appDir, defaultGoals string, options []string, cache libbuildpack.Cache) error {
+func (r *Runner) Run(appDir, defaultGoals string, options []string, layersDir layers.Layers) error {
 	r.Goals = parseGoals(defaultGoals)
 	r.Options = trimArgs(options)
 
-	err := r.Init(appDir, cache)
+	err := r.Init(appDir, layersDir)
 	if err != nil {
 		return err
 	}
 
-	m2Dir, err := r.createMavenRepoDir(appDir, cache)
+	m2Dir, err := r.createMavenRepoDir(appDir, layersDir)
 	if err != nil {
 		return err
 	}
@@ -54,8 +54,8 @@ func (r *Runner) Run(appDir, defaultGoals string, options []string, cache libbui
 }
 
 // This function should remain free of side-effects to the filesystem
-func (r *Runner) Init(appDir string, cache libbuildpack.Cache) error {
-	mvn, err := r.resolveMavenCommand(appDir, cache)
+func (r *Runner) Init(appDir string, layersDir layers.Layers) error {
+	mvn, err := r.resolveMavenCommand(appDir, layersDir)
 	if err != nil {
 		return err
 	}
@@ -71,13 +71,13 @@ func (r *Runner) Init(appDir string, cache libbuildpack.Cache) error {
 	return nil
 }
 
-func (r *Runner) resolveMavenCommand(appDir string, cache libbuildpack.Cache) (string, error) {
+func (r *Runner) resolveMavenCommand(appDir string, layersDir layers.Layers) (string, error) {
 	if r.hasMavenWrapper(appDir) {
 		mvn := filepath.Join(appDir, "mvnw")
 		os.Chmod(mvn, 0774)
 		return mvn, nil
 	} else {
-		mavenCacheLayer := cache.Layer("maven")
+		mavenCacheLayer := layersDir.Layer("maven")
 		mvn, err := r.installMaven(mavenCacheLayer.Root)
 		if err != nil {
 			return "", err
@@ -148,13 +148,13 @@ func (r *Runner) constructSettingsOpts(appDir string) (string, error) {
 	return "", nil
 }
 
-func (r *Runner) createMavenRepoDir(appDir string, cache libbuildpack.Cache) (string, error) {
+func (r *Runner) createMavenRepoDir(appDir string, layersDir layers.Layers) (string, error) {
 	m2Dir, err := defaultMavenHome()
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("error getting maven home: %s", err))
 	}
 
-	m2CacheLayer := cache.Layer("maven_m2")
+	m2CacheLayer := layersDir.Layer("maven_m2")
 
 	err = os.MkdirAll(m2CacheLayer.Root, os.ModePerm)
 	if err != nil {

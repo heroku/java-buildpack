@@ -2,28 +2,27 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
 	"os"
 
-	"github.com/buildpack/libbuildpack"
+	"github.com/buildpack/libbuildpack/layers"
+	"github.com/buildpack/libbuildpack/logger"
+	"github.com/buildpack/libbuildpack/platform"
 	"github.com/heroku/java-buildpack/cmd"
 	"github.com/heroku/java-buildpack/jdk"
 )
 
 var (
-	platformDir  string
-	cacheDir     string
-	launchDir    string
-	buildpackDir string
+	platformRoot  string
+	layersRoot    string
+	buildpackRoot string
 )
 
 func init() {
-	cmd.FlagPlatform(&platformDir)
-	cmd.FlagCache(&cacheDir)
-	cmd.FlagLaunch(&launchDir)
+	cmd.FlagPlatform(&platformRoot)
+	cmd.FlagLayers(&layersRoot)
 
 	// TODO shouldn't we be able to find this from the binary?
-	cmd.FlagBuildpack(&buildpackDir)
+	cmd.FlagBuildpack(&buildpackRoot)
 }
 
 func main() {
@@ -32,21 +31,23 @@ func main() {
 		cmd.Exit(cmd.FailCode(cmd.CodeInvalidArgs, "parse arguments"))
 	}
 
-	cmd.Exit(runGoals(platformDir, cacheDir, launchDir, buildpackDir))
+	cmd.Exit(runGoals(platformRoot, layersRoot, buildpackRoot))
 }
 
-func runGoals(platformDir, cacheDir, launchDir, buildpackDir string) error {
-	logger := libbuildpack.NewLogger(ioutil.Discard, os.Stdout)
+func runGoals(platformRoot, layersRoot, buildpackRoot string) error {
+	log := logger.DefaultLogger()
 
-	platform, err := libbuildpack.NewPlatform(platformDir, logger)
+	bpPlatform, err := platform.DefaultPlatform(platformRoot, log)
 	if err != nil {
 		return err
 	}
 
-	platform.Envs.SetAll()
+	err = bpPlatform.EnvironmentVariables.SetAll()
+	if err != nil {
+		return err
+	}
 
-	cache := libbuildpack.Cache{Root: cacheDir, Logger: logger}
-	launch := libbuildpack.Launch{Root: launchDir, Logger: logger}
+	layersDir := layers.NewLayers(layersRoot, log)
 
 	appDir, err := os.Getwd()
 	if err != nil {
@@ -57,9 +58,9 @@ func runGoals(platformDir, cacheDir, launchDir, buildpackDir string) error {
 		In:           []byte{},
 		Out:          os.Stdout,
 		Err:          os.Stderr,
-		BuildpackDir: buildpackDir,
+		BuildpackDir: buildpackRoot,
 	}
-	jdkInstall, err := jdkInstaller.Install(appDir, cache, launch)
+	jdkInstall, err := jdkInstaller.Install(appDir, layersDir)
 	if err != nil {
 		return err
 	}

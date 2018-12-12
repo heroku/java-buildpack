@@ -19,20 +19,12 @@ func FlagPlatform(v *string) {
 	flag.StringVar(v, "platform", d, "platform directory")
 }
 
-func FlagCache(v *string) {
-	d, err := ioutil.TempDir("", "cache")
+func FlagLayers(v *string) {
+	d, err := ioutil.TempDir("", "layers")
 	if err != nil {
 		panic(err)
 	}
-	flag.StringVar(v, "cache", d, "cache directory")
-}
-
-func FlagLaunch(v *string) {
-	d, err := ioutil.TempDir("", "launch")
-	if err != nil {
-		panic(err)
-	}
-	flag.StringVar(v, "launch", d, "launch directory")
+	flag.StringVar(v, "layers", d, "layers directory")
 }
 
 func FlagBuildpack(v *string) {

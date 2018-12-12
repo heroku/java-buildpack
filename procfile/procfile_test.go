@@ -1,12 +1,11 @@
 package procfile_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/buildpack/libbuildpack"
+	"github.com/buildpack/libbuildpack/layers"
 	"github.com/heroku/java-buildpack/procfile"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -17,23 +16,6 @@ func TestProcfile(t *testing.T) {
 }
 
 func testProcfile(t *testing.T, when spec.G, it spec.S) {
-	var (
-		launch libbuildpack.Launch
-	)
-
-	it.Before(func() {
-		launchRoot, err := ioutil.TempDir("", "launch")
-		if err != nil {
-			t.Fatal(err)
-		}
-		logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
-		launch = libbuildpack.Launch{Root: launchRoot, Logger: logger}
-	})
-
-	it.After(func() {
-		os.RemoveAll(launch.Root)
-	})
-
 	when("#Parse", func() {
 		it("should find process types", func() {
 			processes, err := procfile.Parse(filepath.Join(fixture("app_with_procfile"), "Procfile"))
@@ -58,13 +40,13 @@ func testProcfile(t *testing.T, when spec.G, it spec.S) {
 	})
 }
 
-func findProcessType(processes []libbuildpack.Process, name string) (bool, libbuildpack.Process) {
+func findProcessType(processes layers.Processes, name string) (bool, layers.Process) {
 	for _, p := range processes {
 		if p.Type == name {
 			return true, p
 		}
 	}
-	return false, libbuildpack.Process{}
+	return false, layers.Process{}
 }
 
 func fixture(name string) string {

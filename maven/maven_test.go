@@ -2,13 +2,13 @@ package maven_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/buildpack/libbuildpack"
+	"github.com/buildpack/libbuildpack/layers"
+	"github.com/buildpack/libbuildpack/logger"
 	"github.com/heroku/java-buildpack/maven"
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
@@ -20,16 +20,15 @@ func TestMaven(t *testing.T) {
 
 func testMaven(t *testing.T, when spec.G, it spec.S) {
 	var (
-		runner *maven.Runner
-		cache  libbuildpack.Cache
-		appDir string
+		runner    *maven.Runner
+		layersDir layers.Layers
+		appDir    string
 	)
 
 	it.Before(func() {
-		cache = libbuildpack.Cache{
-			Root:   os.TempDir(),
-			Logger: libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard),
-		}
+		log := logger.DefaultLogger()
+
+		layersDir = layers.NewLayers(os.TempDir(), log)
 
 		runner = &maven.Runner{
 			In:  []byte{},
@@ -39,7 +38,7 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		os.RemoveAll(cache.Root)
+		os.RemoveAll(layersDir.Root)
 	})
 
 	when("#Init", func() {
@@ -47,7 +46,7 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 			appDir = fixture("app_with_wrapper")
 
 			it("should use the mvnw command", func() {
-				if err := runner.Init(appDir, cache); err != nil {
+				if err := runner.Init(appDir, layersDir); err != nil {
 					t.Fatal(err)
 				}
 
@@ -60,7 +59,7 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 			appDir = fixture("app_with_settings")
 
 			it("should use the settings option", func() {
-				if err := runner.Init(appDir, cache); err != nil {
+				if err := runner.Init(appDir, layersDir); err != nil {
 					t.Fatal(err)
 				}
 
@@ -76,7 +75,7 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 				expected := "any/old/path/settings.xml"
 				os.Setenv("MAVEN_SETTINGS_PATH", expected)
 
-				if err := runner.Init(appDir, cache); err != nil {
+				if err := runner.Init(appDir, layersDir); err != nil {
 					t.Fatal(err)
 				}
 
@@ -94,10 +93,10 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 			appDir = fixture("app_with_wrapper")
 
 			it("should not use the defaults", func() {
-				expected := []string{"clean",  "package"}
+				expected := []string{"clean", "package"}
 				os.Setenv("MAVEN_CUSTOM_GOALS", strings.Join(expected, " "))
 
-				if err := runner.Init(appDir, cache); err != nil {
+				if err := runner.Init(appDir, layersDir); err != nil {
 					t.Fatal(err)
 				}
 
@@ -120,7 +119,7 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 				expected := "-Dfoo=bar"
 				os.Setenv("MAVEN_CUSTOM_OPTS", expected)
 
-				if err := runner.Init(appDir, cache); err != nil {
+				if err := runner.Init(appDir, layersDir); err != nil {
 					t.Fatal(err)
 				}
 

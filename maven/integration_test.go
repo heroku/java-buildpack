@@ -12,7 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/buildpack/libbuildpack"
+	"github.com/buildpack/libbuildpack/layers"
+	"github.com/buildpack/libbuildpack/logger"
 	"github.com/heroku/java-buildpack/jdk"
 	"github.com/heroku/java-buildpack/maven"
 	"github.com/sclevine/spec"
@@ -38,8 +39,7 @@ func TestIntegrationMaven(t *testing.T) {
 func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 	var (
 		runner         *maven.Runner
-		cache          libbuildpack.Cache
-		launch         libbuildpack.Launch
+		layersDir      layers.Layers
 		stdout, stderr *bytes.Buffer
 	)
 
@@ -48,32 +48,7 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 		wd, _ := os.Getwd()
 		os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(wd, "..", "bin")))
 
-		logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
-
-		cacheRoot, err := ioutil.TempDir("", "cache")
-		if err != nil {
-			t.Fatal(err)
-		}
-		cache = libbuildpack.Cache{Root: cacheRoot, Logger: logger}
-
-		//launchRoot, err := ioutil.TempDir("", "launch")
-		//if err != nil {
-		//	t.Fatal(err)
-		//}
-		//launch = libbuildpack.Launch{Root: launchRoot, Logger: logger}
-		//
-		//jdkInstaller := jdk.Installer{
-		//	In:  []byte{},
-		//	Out: os.Stdout,
-		//	Err: os.Stderr,
-		//}
-		//jdkInstall, err := jdkInstaller.Install(fixture("app_with_pom"), cache, launch)
-		//if err != nil {
-		//	t.Fatal(err)
-		//}
-		//
-		//os.Setenv("JAVA_HOME", jdkInstall.Home)
-		//os.Setenv("PATH", fmt.Sprintf("%s/bin:%s", os.Getenv("PATH"), jdkInstall.Home))
+		layersDir = layers.NewLayers(os.TempDir(), logger.DefaultLogger())
 
 		stdout, stderr = &bytes.Buffer{}, &bytes.Buffer{}
 		runner = &maven.Runner{
@@ -84,13 +59,12 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		os.RemoveAll(cache.Root)
-		os.RemoveAll(launch.Root)
+		os.RemoveAll(layersDir.Root)
 	})
 
 	when("#Install", func() {
 		it("should get the maven version", func() {
-			err := runner.Run(fixture("app_with_pom"), "--version", []string{}, cache)
+			err := runner.Run(fixture("app_with_pom"), "--version", []string{}, layersDir)
 			if err != nil {
 				t.Fatal(stderr.String(), err)
 			}
@@ -102,7 +76,7 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("should run maven", func() {
-			err := runner.Run(fixture("app_with_pom"), "clean install", []string{}, cache)
+			err := runner.Run(fixture("app_with_pom"), "clean install", []string{}, layersDir)
 			if err != nil {
 				t.Fatal(stderr.String(), err)
 			}
@@ -114,7 +88,7 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it("should use settings.xml", func() {
-			err := runner.Run(fixture("app_with_settings"), "clean install", []string{}, cache)
+			err := runner.Run(fixture("app_with_settings"), "clean install", []string{}, layersDir)
 			if err != nil {
 				t.Fatal(stderr.String(), err)
 			}
@@ -138,7 +112,7 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 				expected := "https://raw.githubusercontent.com/kissaten/settings-xml-example/master/settings.xml"
 				os.Setenv("MAVEN_SETTINGS_URL", expected)
 
-				if err := runner.Init(appDir, cache); err != nil {
+				if err := runner.Init(appDir, layersDir); err != nil {
 					t.Fatal(err)
 				}
 
@@ -159,15 +133,11 @@ func installGlobalJdk(installDir string) error {
 	wd, _ := os.Getwd()
 	os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(wd, "..", "bin")))
 
-	logger := libbuildpack.NewLogger(ioutil.Discard, ioutil.Discard)
-
-	cacheRoot, err := ioutil.TempDir("", "jdk-cache")
+	layersRoot, err := ioutil.TempDir("", "jdk-cache")
 	if err != nil {
 		return err
 	}
-	jdkCache := libbuildpack.Cache{Root: cacheRoot, Logger: logger}
-
-	jdkLaunch := libbuildpack.Launch{Root: installDir, Logger: logger}
+	jdkLayers := layers.NewLayers(layersRoot, logger.DefaultLogger())
 
 	jdkInstaller := jdk.Installer{
 		In:           []byte{},
@@ -175,7 +145,7 @@ func installGlobalJdk(installDir string) error {
 		Err:          os.Stderr,
 		BuildpackDir: filepath.Join(wd, ".."),
 	}
-	jdkInstall, err := jdkInstaller.Install("/", jdkCache, jdkLaunch)
+	jdkInstall, err := jdkInstaller.Install("/", jdkLayers)
 	if err != nil {
 		return err
 	}
