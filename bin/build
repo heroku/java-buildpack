@@ -29,7 +29,7 @@ status "Installing JDK"
 jdk-installer -layers $1 -platform $2 -buildpack "$BP_DIR"
 
 # TODO the JVM buildpack should handle this
-export JAVA_HOME="${4}/jdk"
+export JAVA_HOME="${1}/jdk"
 export PATH="${JAVA_HOME}/bin:$PATH"
 
 status "Running Maven"
