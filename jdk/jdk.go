@@ -106,7 +106,7 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jdk, error)
 }
 
 func (jdk Jdk) WriteMetadata(layer layers.Layer) error {
-	return layer.WriteMetadata(jdk)
+	return layer.WriteMetadata(jdk, layers.Launch)
 }
 
 func (i *Installer) fetchJdk(jdkUrl string, layer layers.Layer) error {
