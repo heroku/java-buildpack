@@ -115,7 +115,7 @@ func (r *Runner) constructOptions(appDir string) ([]string, error) {
 		return []string{}, err
 	}
 
-	opts = append(opts, settingsOpt)
+	opts = append(opts, settingsOpt...)
 
 	if customOpts, isSet := os.LookupEnv("MAVEN_CUSTOM_OPTS"); isSet {
 		opts = append(opts, parseGoals(customOpts)...)
@@ -124,9 +124,9 @@ func (r *Runner) constructOptions(appDir string) ([]string, error) {
 	return trimArgs(opts), nil
 }
 
-func (r *Runner) constructSettingsOpts(appDir string) (string, error) {
+func (r *Runner) constructSettingsOpts(appDir string) ([]string, error) {
 	if mvnSettingsPath, isSet := os.LookupEnv("MAVEN_SETTINGS_PATH"); isSet {
-		return fmt.Sprintf("-s %s", mvnSettingsPath), nil
+		return []string{"-s", mvnSettingsPath}, nil
 	} else if mvnSettingsUrl, isSet := os.LookupEnv("MAVEN_SETTINGS_URL"); isSet {
 		settingsXml := filepath.Join(os.TempDir(), "settings.xml")
 
@@ -136,16 +136,16 @@ func (r *Runner) constructSettingsOpts(appDir string) (string, error) {
 		cmd.Stderr = r.Err
 
 		if err := cmd.Run(); err != nil {
-			return "", failedToDownloadSettings(err)
+			return nil, failedToDownloadSettings(err)
 		}
 		if _, err := os.Stat(settingsXml); os.IsNotExist(err) {
-			return "", failedToDownloadSettingsFromUrl(settingsXml, err)
+			return nil, failedToDownloadSettingsFromUrl(settingsXml, err)
 		}
-		return fmt.Sprintf("-s %s", settingsXml), nil
+		return []string{"-s", settingsXml}, nil
 	} else if _, err := os.Stat(filepath.Join(appDir, "settings.xml")); !os.IsNotExist(err) {
-		return fmt.Sprintf("-s %s", filepath.Join(appDir, "settings.xml")), nil
+		return []string{"-s", "settings.xml"}, nil
 	}
-	return "", nil
+	return nil, nil
 }
 
 func (r *Runner) createMavenRepoDir(appDir string, layersDir layers.Layers) (string, error) {
