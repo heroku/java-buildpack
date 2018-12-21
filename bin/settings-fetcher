@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+fetch_settings_xml() {
+  local mvnSettingsUrl="{$1?}"
+  local settingsXml="{$2?}"
+  mkdir -p $(dirname $settingsXml)
+  curl --retry 3 --max-time 10 -sL "$mvnSettingsUrl" -o "$settingsXml"
+}
+
+fetch_settings_xml "$1" "$2"

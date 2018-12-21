@@ -25,6 +25,7 @@ build:
 
 clean:
 	-rm -f java-buildpack-$(VERSION).tgz
+	-rm -f bin/jdk-installer bin/maven-runner bin/releaser
 
 package: clean build
 	@tar cvzf java-buildpack-$(VERSION).tgz bin/ profile.d/ buildpack.toml README.md LICENSE
