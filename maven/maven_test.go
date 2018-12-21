@@ -68,7 +68,11 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 					t.Fatal(err)
 				}
 
-				if !hasOption(runner.Options, fmt.Sprintf("-s %s/settings.xml", appDir)) {
+				if !hasOption(runner.Options, "-s") {
+					t.Fatalf(`runner options does not use -s option: \n%s`, runner.Options)
+				}
+
+				if !hasOption(runner.Options, "settings.xml") {
 					t.Fatalf(`runner options does not use settings.xml: \n%s`, runner.Options)
 				}
 			})
@@ -84,7 +88,11 @@ func testMaven(t *testing.T, when spec.G, it spec.S) {
 					t.Fatal(err)
 				}
 
-				if !hasOption(runner.Options, fmt.Sprintf("-s %s", expected)) {
+				if !hasOption(runner.Options, "-s") {
+					t.Fatalf(`runner options does not use -s option: \n%s`, runner.Options)
+				}
+
+				if !hasOption(runner.Options, fmt.Sprintf("%s", expected)) {
 					t.Fatalf(`runner settings option does not use environment variable: \n%s`, runner.Options)
 				}
 			})
