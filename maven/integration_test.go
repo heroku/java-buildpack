@@ -120,8 +120,12 @@ func testIntegrationMaven(t *testing.T, when spec.G, it spec.S) {
 					t.Fatal(err)
 				}
 
-				if !hasOption(runner.Options, "-s /tmp/settings.xml") {
-					t.Fatalf(`runner options does not use environment variable: \n%s`, runner.Options)
+				if !hasOption(runner.Options, "-s") {
+					t.Fatalf(`runner options does not use -s option: \n%s`, runner.Options)
+				}
+
+				if !hasOption(runner.Options, "/tmp/settings.xml") {
+					t.Fatalf(`runner options does not use settings.xml: \n%s`, runner.Options)
 				}
 			})
 

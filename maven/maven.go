@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -130,16 +131,25 @@ func (r *Runner) constructSettingsOpts(appDir string) ([]string, error) {
 	} else if mvnSettingsUrl, isSet := os.LookupEnv("MAVEN_SETTINGS_URL"); isSet {
 		settingsXml := filepath.Join(os.TempDir(), "settings.xml")
 
-		cmd := exec.Command("curl", "--retry", "3", "--max-time", "10", "-sfL", mvnSettingsUrl, "-o", settingsXml)
-		cmd.Env = os.Environ()
-		cmd.Stdout = r.Out
-		cmd.Stderr = r.Err
-
-		if err := cmd.Run(); err != nil {
+		out, err := os.Create(settingsXml)
+		if err != nil {
 			return nil, failedToDownloadSettings(err)
 		}
+		defer out.Close()
+
+		resp, err := http.Get(mvnSettingsUrl)
+		if err != nil {
+			return nil, failedToDownloadSettings(err)
+		}
+		defer resp.Body.Close()
+
+		_, err = io.Copy(out, resp.Body)
+		if err != nil {
+			return nil, failedToDownloadSettings(err)
+		}
+
 		if _, err := os.Stat(settingsXml); os.IsNotExist(err) {
-			return nil, failedToDownloadSettingsFromUrl(settingsXml, err)
+			return nil, failedToDownloadSettingsFromUrl(mvnSettingsUrl, err)
 		}
 		return []string{"-s", settingsXml}, nil
 	} else if _, err := os.Stat(filepath.Join(appDir, "settings.xml")); !os.IsNotExist(err) {
