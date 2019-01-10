@@ -166,6 +166,8 @@ func (r *Runner) createMavenRepoDir(appDir string, layersDir layers.Layers) (str
 
 	m2CacheLayer := layersDir.Layer("maven_m2")
 
+	m2CacheLayer.WriteMetadata(nil, layers.Cache)
+
 	err = os.MkdirAll(m2CacheLayer.Root, os.ModePerm)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("error creating maven cache layer: %s", err))
