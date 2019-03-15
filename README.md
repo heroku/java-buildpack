@@ -11,7 +11,7 @@ The buildpack will detect your app as Java if it has a `pom.xml` file, or one of
 
 ## Usage
 
-To use this buildpack with [`pack` CLI]() run the following commands:
+To use this buildpack with [`pack` CLI](https://github.com/buildpack/pack) run the following commands:
 
 ```
 $ docker pull docker pull heroku/pack:18 
