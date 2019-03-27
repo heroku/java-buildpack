@@ -36,6 +36,27 @@ func testJar(t *testing.T, when spec.G, it spec.S) {
 				t.Fatalf(`Did not create correct command: got %s, want %s`, processes[0].Command, expected)
 			}
 		})
+
+		it("should find an executable war", func() {
+			processes, err := util.FindExecutableJar(fixture("app_with_exec_war"))
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(processes) != 1 {
+				t.Fatalf(`Did not find executable JAR: got %d, want %d`, len(processes), 1)
+			}
+
+			if processes[0].Type != "web" {
+				t.Fatal("Did not create a web process")
+			}
+
+			expected := "java -Dserver.port=$PORT -jar target/demo-0.0.1-SNAPSHOT.war"
+			if processes[0].Command != expected {
+				t.Fatalf(`Did not create correct command: got %s, want %s`, processes[0].Command, expected)
+			}
+		})
 	})
 }
 
