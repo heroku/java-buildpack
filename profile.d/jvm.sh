@@ -12,10 +12,10 @@ calculate_java_memory_opts() {
     echo "$opts -Xmx671m -XX:CICompilerCount=2"
     ;;
   2684354560) # perf-m, private-m
-    echo "$opts -Xms512m -Xmx2g"
+    echo "$opts -Xmx2g"
     ;;
   15032385536) # perf-l, private-l
-    echo "$opts -Xms1g -Xmx12g"
+    echo "$opts -Xmx12g"
     ;;
   *) # Free, Hobby, 1X
     echo "$opts -Xmx300m -Xss512k -XX:CICompilerCount=2"
