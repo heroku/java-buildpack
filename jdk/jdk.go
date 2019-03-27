@@ -42,10 +42,11 @@ const (
 
 var (
 	DefaultVersionStrings = map[int]string{
-		8:  "1.8.0_191",
+		8:  "1.8.0_201",
 		9:  "9.0.4",
 		10: "10.0.2",
-		11: "11.0.1",
+		11: "11.0.2",
+		12: "12.0.0",
 	}
 )
 
@@ -188,7 +189,7 @@ func ParseVersionString(v string) (Version, error) {
 	if v == "10" || v == "11" {
 		major, _ := strconv.Atoi(v)
 		return ParseVersionString(DefaultVersionStrings[major])
-	} else if m := regexp.MustCompile("^(1[0-1])\\.").FindAllStringSubmatch(v, -1); len(m) == 1 {
+	} else if m := regexp.MustCompile("^(1[0-9])\\.").FindAllStringSubmatch(v, -1); len(m) == 1 {
 		major, _ := strconv.Atoi(m[0][1])
 		return Version{
 			Vendor: DefaultVendor,
@@ -289,6 +290,8 @@ func parseMajorVersion(tag string) int {
 		return 10
 	} else if m := regexp.MustCompile("^11").FindAllStringSubmatch(tag, -1); len(m) == 1 {
 		return 11
+	} else if m := regexp.MustCompile("^12").FindAllStringSubmatch(tag, -1); len(m) == 1 {
+		return 12
 	} else {
 		major, _ := strconv.Atoi(tag)
 		return major

@@ -118,6 +118,21 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	when("#GetVersionUrl", func() {
+		it("should get 12.0.0", func() {
+			url, err := jdk.GetVersionUrl(jdk.Version{
+				Major:  12,
+				Tag:    "12.0.0",
+				Vendor: "openjdk",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(url, "https://lang-jvm.s3.amazonaws.com/jdk/heroku-18/openjdk12.0.0.tar.gz"); diff != "" {
+				t.Fatalf(`URL did not match: (-got +want)\n%s`, diff)
+			}
+		})
+
 		it("should get 10.0.2", func() {
 			url, err := jdk.GetVersionUrl(jdk.Version{
 				Major:  10,
