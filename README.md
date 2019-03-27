@@ -1,7 +1,7 @@
 # Heroku Cloud Native Buildpack for Java
 
 [![Build
-Status](https://travis-ci.com/heroku/java-buildpack.svg?branch=master)](https://travis-ci.com/heroku/java-buildpack)
+Status](https://travis-ci.com/heroku/java-buildpack.svg?branch=master)](https://travis-ci.com/heroku/java-buildpack) ![GitHub release](https://img.shields.io/github/release/heroku/java-buildpack.svg)
 
 This is a work in progress (WIP) Heroku [Cloud Native Buildpack](https://buildpacks.io/) for Java apps. It uses Maven to build your application and OpenJDK to run it. However, the JDK version can be configured as described below.
 
