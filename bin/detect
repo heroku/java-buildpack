@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-if [ -f pom.xml ] ||
-   [ -f pom.atom ] ||
-   [ -f pom.clj ] ||
-   [ -f pom.groovy ] ||
-   [ -f pom.rb ] ||
-   [ -f pom.scala ] ||
-   [ -f pom.yaml ] ||
-   [ -f pom.yml ] ; then
+if [[ -f pom.xml ]] ||
+   [[ -f pom.atom ]] ||
+   [[ -f pom.clj ]] ||
+   [[ -f pom.groovy ]] ||
+   [[ -f pom.rb ]] ||
+   [[ -f pom.scala ]] ||
+   [[ -f pom.yaml ]] ||
+   [[ -f pom.yml ]] ; then
   echo "Java"
   exit 0
 else

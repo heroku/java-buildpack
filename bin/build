@@ -14,7 +14,7 @@ set -eo pipefail
 
 BP_DIR=$(cd $(dirname $0)/..; pwd) # absolute path
 
-if [ ! -f "$BP_DIR/bin/jdk-installer" ] || [ ! -f "$BP_DIR/bin/maven-runner" ]; then
+if [[ ! -f "$BP_DIR/bin/jdk-installer" ]] || [[ ! -f "$BP_DIR/bin/maven-runner" ]]; then
   echo "Bootstrapping buildpack binaries"
   bash "$BP_DIR/bin/bootstrap" "$BP_DIR"
   echo "Successfully compiled buildpack"
