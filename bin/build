@@ -9,6 +9,12 @@ status() {
 
 status "Java buildpack"
 
+# FIXME this is necessary because of a bug in buildpack/lifecycle, where all files copied into the container
+# lose there timestamp, and get 1970-01-01 00:00:00 instead. The result is an error from Spring when booting the jar:
+# java.time.DateTimeException: Invalid value for MonthOfYear (valid values 1 - 12): 0
+# See: https://github.com/buildpack/pack/issues/130
+find . -exec touch {} \;
+
 # fail fast
 set -eo pipefail
 
