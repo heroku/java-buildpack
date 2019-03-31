@@ -11,12 +11,9 @@ The buildpack will detect your app as Java if it has a `pom.xml` file, or one of
 
 ## Usage
 
-To use this buildpack with [`pack` CLI]() run the following commands:
+To use this buildpack with [`pack` CLI](https://github.com/buildpack/pack) run the following commands:
 
 ```
-$ docker pull docker pull heroku/pack:18 
-$ docker pull docker pull heroku/pack:18-build 
-$ pack add-stack heroku-18 --build-image heroku/pack:18-build --run-image heroku/pack:18
 $ pack build image:tag --builder=heroku/buildpacks
 ```
 
@@ -28,6 +25,8 @@ This buildpack supports the following environment variables for customization:
 * `MAVEN_CUSTOM_OPTS`
 * `MAVEN_SETTINGS_PATH`
 * `MAVEN_SETTINGS_URL`
+
+You can select the JDK vendor and version using a `system.properties` file as described in the [Heroku documentation on Java](https://devcenter.heroku.com/articles/java-support).
 
 ## Development
 
