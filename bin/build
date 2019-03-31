@@ -13,7 +13,7 @@ status "Java buildpack"
 # lose there timestamp, and get 1970-01-01 00:00:00 instead. The result is an error from Spring when booting the jar:
 # java.time.DateTimeException: Invalid value for MonthOfYear (valid values 1 - 12): 0
 # See: https://github.com/buildpack/pack/issues/130
-find . -exec touch {} \;
+find . -exec touch -t 201510211200 {} \;
 
 # fail fast
 set -eo pipefail
