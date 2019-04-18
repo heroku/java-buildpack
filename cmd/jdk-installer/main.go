@@ -58,13 +58,13 @@ func runGoals(platformRoot, layersRoot, buildpackRoot string) error {
 		In:           []byte{},
 		Out:          os.Stdout,
 		Err:          os.Stderr,
+		Log:          log,
 		BuildpackDir: buildpackRoot,
 	}
-	jdkInstall, err := jdkInstaller.Install(appDir, layersDir)
+	_, err = jdkInstaller.Install(appDir, layersDir)
 	if err != nil {
 		return err
 	}
-	println("Java", jdkInstall.Version.Tag, "installed")
 
 	return nil
 }

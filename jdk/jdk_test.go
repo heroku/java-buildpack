@@ -16,7 +16,7 @@ import (
 
 func TestJdk(t *testing.T) {
 	spec.Run(t, "Installer", testJdkInstaller, spec.Report(report.Terminal{}))
-	spec.Run(t, "Jdk", testJdk, spec.Report(report.Terminal{}))
+	spec.Run(t, "Jvm", testJdk, spec.Report(report.Terminal{}))
 }
 
 func testJdk(t *testing.T, when spec.G, it spec.S) {
@@ -33,12 +33,12 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		os.RemoveAll(layersDir.Root)
+		_ = os.RemoveAll(layersDir.Root)
 	})
 
 	when("#WriteMetadata", func() {
 		it("should detect jdk version", func() {
-			expected := jdk.Jdk{
+			expected := jdk.Jvm{
 				Home: layersDir.Root,
 				Version: jdk.Version{
 					Major:  8,
@@ -47,29 +47,29 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 				},
 			}
 
-			if err := expected.WriteMetadata(layersDir.Layer("jdk")); err != nil {
+			if err := layersDir.Layer("jdk").WriteMetadata(expected, layers.Launch); err != nil {
 				t.Fatal(err)
 			}
 
-			var actual jdk.Jdk
+			var actual jdk.Jvm
 			if err := layersDir.Layer("jdk").ReadMetadata(&actual); err != nil {
 				t.Fatal("Layer metadata was not written")
 			}
 
 			if actual.Home != expected.Home {
-				t.Fatalf(`Jdk.Home did not match: got %s, want %s`, actual.Home, expected.Home)
+				t.Fatalf(`Jvm.Home did not match: got %s, want %s`, actual.Home, expected.Home)
 			}
 
 			if actual.Version.Major != expected.Version.Major {
-				t.Fatalf(`Jdk.Version.Tag did not match: got %d, want %d`, actual.Version.Major, expected.Version.Major)
+				t.Fatalf(`Jvm.Version.Tag did not match: got %d, want %d`, actual.Version.Major, expected.Version.Major)
 			}
 
 			if actual.Version.Tag != expected.Version.Tag {
-				t.Fatalf(`Jdk.Version.Tag did not match: got %s, want %s`, actual.Version.Tag, expected.Version.Tag)
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %s`, actual.Version.Tag, expected.Version.Tag)
 			}
 
 			if actual.Version.Vendor != expected.Version.Vendor {
-				t.Fatalf(`Jdk.Version.Vendor did not match: got %s, want %s`, actual.Version.Vendor, expected.Version.Vendor)
+				t.Fatalf(`Jvm.Version.Vendor did not match: got %s, want %s`, actual.Version.Vendor, expected.Version.Vendor)
 			}
 		})
 	})
@@ -83,7 +83,7 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
-		os.Setenv("STACK", "heroku-18")
+		_ = os.Setenv("STACK", "heroku-18")
 
 		installer = &jdk.Installer{
 			In:  []byte{},
@@ -100,7 +100,7 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		os.RemoveAll(layersDir.Root)
+		_ = os.RemoveAll(layersDir.Root)
 	})
 
 	when("#Init", func() {

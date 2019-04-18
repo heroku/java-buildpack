@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	"github.com/buildpack/libbuildpack/layers"
+	"github.com/buildpack/libbuildpack/logger"
 	"github.com/heroku/java-buildpack/util"
 )
 
@@ -21,9 +22,10 @@ type Installer struct {
 	Out, Err     io.Writer
 	Version      Version
 	BuildpackDir string
+	Log          logger.Logger
 }
 
-type Jdk struct {
+type Jvm struct {
 	Version Version `toml:"version"`
 	Home    string  `toml:"home"`
 }
@@ -61,21 +63,25 @@ func (i *Installer) Init(appDir string) error {
 	return nil
 }
 
-func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jdk, error) {
-	i.Init(appDir)
-	// check the build plan to see if another JDK has already been installed?
+func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jvm, error) {
+	err := i.Init(appDir)
+	if err != nil {
+		return Jvm{}, err
+	}
+
+	// TODO check the build plan to see if another JDK has already been installed?
 
 	jdkUrl, err := GetVersionUrl(i.Version)
 	if err != nil {
-		return Jdk{}, err
+		return Jvm{}, err
 	}
 
 	if !IsValidJdkUrl(jdkUrl) {
-		return Jdk{}, invalidJdkVersion(i.Version.Tag, jdkUrl)
+		return Jvm{}, invalidJdkVersion(i.Version.Tag, jdkUrl)
 	}
 
 	jdkLayer := layersDir.Layer("jdk")
-	jdk := Jdk{
+	jdk := Jvm{
 		Home:    jdkLayer.Root,
 		Version: i.Version,
 	}
@@ -99,19 +105,44 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jdk, error)
 		return jdk, err
 	}
 
-	if err := jdk.WriteMetadata(jdkLayer); err != nil {
-		return jdk, err
+	i.Log.Info("JDK %s installed", jdk.Version.Tag)
+
+	jreDir := filepath.Join(jdkLayer.Root, "jre")
+	if _, err = os.Stat(jreDir); err != nil || os.IsNotExist(err) {
+		// jdk 11+
+		if err := jdkLayer.WriteMetadata(jdk, layers.Launch); err != nil {
+			return jdk, err
+		}
+	} else {
+		jreLayer := layersDir.Layer("jre")
+		if err := i.extractJreFromJdk(jreDir, jreLayer); err != nil {
+			return jdk, err
+		}
+
+		jre := Jvm{
+			Home:    jreLayer.Root,
+			Version: i.Version,
+		}
+		if err := jreLayer.WriteMetadata(jre, layers.Launch); err != nil {
+			return jre, err
+		}
+		i.Log.Info("JRE %s added to launch image", jre.Version.Tag)
 	}
 
 	return jdk, nil
 }
 
-func (jdk Jdk) WriteMetadata(layer layers.Layer) error {
-	return layer.WriteMetadata(jdk, layers.Launch)
-}
-
 func (i *Installer) fetchJdk(jdkUrl string, layer layers.Layer) error {
 	cmd := exec.Command(filepath.Join("jdk-fetcher"), jdkUrl, layer.Root)
+	cmd.Env = os.Environ()
+	cmd.Stdout = i.Out
+	cmd.Stderr = i.Err
+
+	return cmd.Run()
+}
+
+func (i *Installer) extractJreFromJdk(jreDir string, jreLayer layers.Layer) error {
+	cmd := exec.Command(filepath.Join("cp"), "-R", jreDir, jreLayer.Root)
 	cmd.Env = os.Environ()
 	cmd.Stdout = i.Out
 	cmd.Stderr = i.Err
@@ -143,7 +174,7 @@ func (i *Installer) detectVersion(appDir string) (Version, error) {
 	return defaultVersion(), nil
 }
 
-func InstallCerts(jdk Jdk) error {
+func InstallCerts(jdk Jvm) error {
 	jreCacerts := filepath.Join(jdk.Home, "jre", "lib", "security", "cacerts")
 	jdkCacerts := filepath.Join(jdk.Home, "lib", "security", "cacerts")
 	systemCacerts := filepath.Clean("/etc/ssl/certs/java/cacerts")
@@ -169,13 +200,17 @@ func CreateProfileScripts(buildpackDir string, layer layers.Layer) error {
 	if err != nil {
 		return err
 	}
-	layer.WriteProfile("jvm.sh", string(jvmProfiled))
+	if err = layer.WriteProfile("jvm.sh", string(jvmProfiled)); err != nil {
+		return err
+	}
 
 	jdbcProfiled, err := ioutil.ReadFile(filepath.Join(buildpackDir, "profile.d", "jdbc.sh"))
 	if err != nil {
 		return err
 	}
-	layer.WriteProfile("jdbc.sh", string(jdbcProfiled))
+	if err = layer.WriteProfile("jdbc.sh", string(jdbcProfiled)); err != nil {
+		return err
+	}
 
 	return nil
 }
