@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strconv"
 
 	"github.com/buildpack/libbuildpack/layers"
 	"github.com/buildpack/libbuildpack/logger"
@@ -31,24 +30,25 @@ type Jvm struct {
 }
 
 type Version struct {
-	Major  int    `toml:"major"`
-	Tag    string `toml:"tag"`
-	Vendor string `toml:"vendor"`
+	// Major should be an int but https://github.com/go-yaml/yaml/issues/430
+	Major  string  `toml:"major"`
+	Tag    string  `toml:"tag"`
+	Vendor string  `toml:"vendor"`
 }
 
 const (
-	DefaultJdkMajorVersion = 8
+	DefaultJdkMajorVersion = "8"
 	DefaultVendor          = "openjdk"
 	DefaultJdkBaseUrl      = "https://lang-jvm.s3.amazonaws.com/jdk"
 )
 
 var (
-	DefaultVersionStrings = map[int]string{
-		8:  "1.8.0_201",
-		9:  "9.0.4",
-		10: "10.0.2",
-		11: "11.0.2",
-		12: "12.0.0",
+	DefaultVersionStrings = map[string]string{
+		"8":  "1.8.0_201",
+		"9":  "9.0.4",
+		"10": "10.0.2",
+		"11": "11.0.2",
+		"12": "12.0.0",
 	}
 )
 
@@ -86,6 +86,27 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jvm, error)
 		Version: i.Version,
 	}
 
+	// check to see if there is an existing cache layer with the same Version.Tag as the one we need to install.
+	// if that layer exists, we can reuse it and skip this whole business of installing the JDK
+	if _, err := os.Stat(jdkLayer.Metadata); err == nil {
+		var oldJdkMetadata Jvm
+		if err = jdkLayer.ReadMetadata(&oldJdkMetadata); err == nil {
+			if oldJdkMetadata.Version.Tag == jdk.Version.Tag {
+				i.Log.Info("JDK %s installed from cache", oldJdkMetadata.Version.Tag)
+				return oldJdkMetadata, nil
+			} else {
+				i.Log.Debug("removing expired JDK from cache")
+				if err = i.removeLayer(jdkLayer); err != nil {
+					return jdk, err
+				}
+			}
+		} else {
+			i.Log.Debug(err.Error())
+		}
+	} else {
+		i.Log.Debug("no cached JDK detected")
+	}
+
 	if err := i.fetchJdk(jdkUrl, jdkLayer); err != nil {
 		return jdk, err
 	}
@@ -108,18 +129,17 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jvm, error)
 	i.Log.Info("JDK %s installed", jdk.Version.Tag)
 
 	jreDir := filepath.Join(jdkLayer.Root, "jre")
+	jreLayer := layersDir.Layer("jre")
+	if err = i.removeLayer(jreLayer); err != nil {
+		return jdk, err
+	}
 
 	if _, err = os.Stat(jreDir); err != nil || os.IsNotExist(err) {
 		// jdk 11+
 		if err := jdkLayer.WriteMetadata(jdk, layers.Launch, layers.Cache, layers.Build); err != nil {
 			return jdk, err
 		}
-
-		if err := os.Remove(fmt.Sprintf("%s.toml", layersDir.Layer("jre").Root)); err != nil {
-			return jdk, nil
-		}
 	} else {
-		jreLayer := layersDir.Layer("jre")
 		if err := i.extractJreFromJdk(jreDir, jreLayer); err != nil {
 			return jdk, err
 		}
@@ -142,6 +162,21 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jvm, error)
 
 func (i *Installer) fetchJdk(jdkUrl string, layer layers.Layer) error {
 	cmd := exec.Command(filepath.Join("jdk-fetcher"), jdkUrl, layer.Root)
+	cmd.Env = os.Environ()
+	cmd.Stdout = i.Out
+	cmd.Stderr = i.Err
+
+	return cmd.Run()
+}
+
+func (i *Installer) removeLayer(layer layers.Layer) error {
+	if _, err := os.Stat(layer.Metadata); err == nil {
+		if err := os.Remove(layer.Metadata); err != nil {
+			return err
+		}
+	}
+
+	cmd := exec.Command(filepath.Join("rm"), "-rf", layer.Root)
 	cmd.Env = os.Environ()
 	cmd.Stdout = i.Out
 	cmd.Stderr = i.Err
@@ -230,31 +265,30 @@ func defaultVersion() Version {
 
 func ParseVersionString(v string) (Version, error) {
 	if v == "10" || v == "11" {
-		major, _ := strconv.Atoi(v)
-		return ParseVersionString(DefaultVersionStrings[major])
+		return ParseVersionString(DefaultVersionStrings[v])
 	} else if m := regexp.MustCompile("^(1[0-9])\\.").FindAllStringSubmatch(v, -1); len(m) == 1 {
-		major, _ := strconv.Atoi(m[0][1])
+		major := m[0][1]
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    v,
 			Major:  major,
 		}, nil
 	} else if m := regexp.MustCompile("^1\\.([7-9])$").FindAllStringSubmatch(v, -1); len(m) == 1 {
-		major, _ := strconv.Atoi(m[0][1])
+		major := m[0][1]
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    DefaultVersionStrings[major],
 			Major:  major,
 		}, nil
 	} else if m := regexp.MustCompile("^([7-9])$").FindAllStringSubmatch(v, -1); len(m) == 1 {
-		major, _ := strconv.Atoi(m[0][1])
+		major := m[0][1]
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    DefaultVersionStrings[major],
 			Major:  major,
 		}, nil
 	} else if m := regexp.MustCompile("^1\\.([7-9])").FindAllStringSubmatch(v, -1); len(m) == 1 {
-		major, _ := strconv.Atoi(m[0][1])
+		major := m[0][1]
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    v,
@@ -264,13 +298,13 @@ func ParseVersionString(v string) (Version, error) {
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    "9-181",
-			Major:  9,
+			Major:  "9",
 		}, nil
 	} else if m := regexp.MustCompile("^9\\.").FindAllStringSubmatch(v, -1); len(m) == 1 {
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    v,
-			Major:  9,
+			Major:  "9",
 		}, nil
 	} else if m := regexp.MustCompile("^zulu-(.*)").FindAllStringSubmatch(v, -1); len(m) == 1 {
 		return Version{
@@ -316,27 +350,26 @@ func IsValidJdkUrl(url string) bool {
 	return res.StatusCode < 300
 }
 
-func parseMajorVersion(tag string) int {
+func parseMajorVersion(tag string) string {
 	if m := regexp.MustCompile("^1\\.7").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 7
+		return "7"
 	} else if m := regexp.MustCompile("^1\\.8").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 8
+		return "8"
 	} else if m := regexp.MustCompile("^1\\.9").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 9
+		return "9"
 	} else if m := regexp.MustCompile("^7").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 7
+		return "7"
 	} else if m := regexp.MustCompile("^8").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 8
+		return "8"
 	} else if m := regexp.MustCompile("^9").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 9
+		return "9"
 	} else if m := regexp.MustCompile("^10").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 10
+		return "10"
 	} else if m := regexp.MustCompile("^11").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 11
+		return "11"
 	} else if m := regexp.MustCompile("^12").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 12
+		return "12"
 	} else {
-		major, _ := strconv.Atoi(tag)
-		return major
+		return tag
 	}
 }

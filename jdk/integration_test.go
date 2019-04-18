@@ -111,12 +111,12 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 				t.Fatalf(`Jvm.Home did not match: got %s, want %s`, jreMetadata.Home, layersDir.Layer("jre").Root)
 			}
 
-			if jreMetadata.Version.Major != 8 {
-				t.Fatalf(`Jvm.Version.Tag did not match: got %d, want %d`, jreMetadata.Version.Major, 8)
+			if jreMetadata.Version.Major != "8" {
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %d`, jreMetadata.Version.Major, 8)
 			}
 
-			if jreMetadata.Version.Tag != jdk.DefaultVersionStrings[8] {
-				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %s`, jreMetadata.Version.Tag, jdk.DefaultVersionStrings[8])
+			if jreMetadata.Version.Tag != jdk.DefaultVersionStrings["8"] {
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %s`, jreMetadata.Version.Tag, jdk.DefaultVersionStrings["8"])
 			}
 
 			if jreMetadata.Version.Vendor != jdk.DefaultVendor {
@@ -132,12 +132,12 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 				t.Fatalf(`JDK Jvm.Home did not match: got %s, want %s`, jdkMetadata.Home, layersDir.Layer("jdk").Root)
 			}
 
-			if jdkMetadata.Version.Major != 8 {
-				t.Fatalf(`JDK Jvm.Version.Tag did not match: got %d, want %d`, jreMetadata.Version.Major, 8)
+			if jdkMetadata.Version.Major != "8" {
+				t.Fatalf(`JDK Jvm.Version.Tag did not match: got %s, want %d`, jreMetadata.Version.Major, 8)
 			}
 
-			if jdkMetadata.Version.Tag != jdk.DefaultVersionStrings[8] {
-				t.Fatalf(`JDK Jvm.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Tag, jdk.DefaultVersionStrings[8])
+			if jdkMetadata.Version.Tag != jdk.DefaultVersionStrings["8"] {
+				t.Fatalf(`JDK Jvm.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Tag, jdk.DefaultVersionStrings["8"])
 			}
 
 			if jdkMetadata.Version.Vendor != jdk.DefaultVendor {
@@ -181,12 +181,12 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 				t.Fatalf(`Jvm.Home did not match: got %s, want %s`, jdkMetadata.Home, layersDir.Layer("jdk").Root)
 			}
 
-			if jdkMetadata.Version.Major != 11 {
-				t.Fatalf(`Jvm.Version.Tag did not match: got %d, want %d`, jdkMetadata.Version.Major, 11)
+			if jdkMetadata.Version.Major != "11" {
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %d`, jdkMetadata.Version.Major, 11)
 			}
 
-			if jdkMetadata.Version.Tag != jdk.DefaultVersionStrings[11] {
-				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Tag, jdk.DefaultVersionStrings[11])
+			if jdkMetadata.Version.Tag != jdk.DefaultVersionStrings["11"] {
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Tag, jdk.DefaultVersionStrings["11"])
 			}
 
 			if jdkMetadata.Version.Vendor != jdk.DefaultVendor {
