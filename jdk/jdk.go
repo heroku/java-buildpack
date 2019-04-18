@@ -10,9 +10,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strconv"
 
 	"github.com/buildpack/libbuildpack/layers"
+	"github.com/buildpack/libbuildpack/logger"
 	"github.com/heroku/java-buildpack/util"
 )
 
@@ -21,32 +21,34 @@ type Installer struct {
 	Out, Err     io.Writer
 	Version      Version
 	BuildpackDir string
+	Log          logger.Logger
 }
 
-type Jdk struct {
+type Jvm struct {
 	Version Version `toml:"version"`
 	Home    string  `toml:"home"`
 }
 
 type Version struct {
-	Major  int    `toml:"major"`
-	Tag    string `toml:"tag"`
-	Vendor string `toml:"vendor"`
+	// Major should be an int but https://github.com/go-yaml/yaml/issues/430
+	Major  string  `toml:"major"`
+	Tag    string  `toml:"tag"`
+	Vendor string  `toml:"vendor"`
 }
 
 const (
-	DefaultJdkMajorVersion = 8
+	DefaultJdkMajorVersion = "8"
 	DefaultVendor          = "openjdk"
 	DefaultJdkBaseUrl      = "https://lang-jvm.s3.amazonaws.com/jdk"
 )
 
 var (
-	DefaultVersionStrings = map[int]string{
-		8:  "1.8.0_201",
-		9:  "9.0.4",
-		10: "10.0.2",
-		11: "11.0.2",
-		12: "12.0.0",
+	DefaultVersionStrings = map[string]string{
+		"8":  "1.8.0_201",
+		"9":  "9.0.4",
+		"10": "10.0.2",
+		"11": "11.0.2",
+		"12": "12.0.0",
 	}
 )
 
@@ -61,23 +63,48 @@ func (i *Installer) Init(appDir string) error {
 	return nil
 }
 
-func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jdk, error) {
-	i.Init(appDir)
-	// check the build plan to see if another JDK has already been installed?
+func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jvm, error) {
+	err := i.Init(appDir)
+	if err != nil {
+		return Jvm{}, err
+	}
+
+	// TODO check the build plan to see if another JDK has already been installed?
 
 	jdkUrl, err := GetVersionUrl(i.Version)
 	if err != nil {
-		return Jdk{}, err
+		return Jvm{}, err
 	}
 
 	if !IsValidJdkUrl(jdkUrl) {
-		return Jdk{}, invalidJdkVersion(i.Version.Tag, jdkUrl)
+		return Jvm{}, invalidJdkVersion(i.Version.Tag, jdkUrl)
 	}
 
 	jdkLayer := layersDir.Layer("jdk")
-	jdk := Jdk{
+	jdk := Jvm{
 		Home:    jdkLayer.Root,
 		Version: i.Version,
+	}
+
+	// check to see if there is an existing cache layer with the same Version.Tag as the one we need to install.
+	// if that layer exists, we can reuse it and skip this whole business of installing the JDK
+	if _, err := os.Stat(jdkLayer.Metadata); err == nil {
+		var oldJdkMetadata Jvm
+		if err = jdkLayer.ReadMetadata(&oldJdkMetadata); err == nil {
+			if oldJdkMetadata.Version.Tag == jdk.Version.Tag {
+				i.Log.Info("JDK %s installed from cache", oldJdkMetadata.Version.Tag)
+				return oldJdkMetadata, nil
+			} else {
+				i.Log.Debug("removing expired JDK from cache")
+				if err = i.removeLayer(jdkLayer); err != nil {
+					return jdk, err
+				}
+			}
+		} else {
+			i.Log.Debug(err.Error())
+		}
+	} else {
+		i.Log.Debug("no cached JDK detected")
 	}
 
 	if err := i.fetchJdk(jdkUrl, jdkLayer); err != nil {
@@ -99,19 +126,66 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jdk, error)
 		return jdk, err
 	}
 
-	if err := jdk.WriteMetadata(jdkLayer); err != nil {
+	i.Log.Info("JDK %s installed", jdk.Version.Tag)
+
+	jreDir := filepath.Join(jdkLayer.Root, "jre")
+	jreLayer := layersDir.Layer("jre")
+	if err = i.removeLayer(jreLayer); err != nil {
 		return jdk, err
+	}
+
+	if _, err = os.Stat(jreDir); err != nil || os.IsNotExist(err) {
+		// jdk 11+
+		if err := jdkLayer.WriteMetadata(jdk, layers.Launch, layers.Cache, layers.Build); err != nil {
+			return jdk, err
+		}
+	} else {
+		if err := i.extractJreFromJdk(jreDir, jreLayer); err != nil {
+			return jdk, err
+		}
+
+		jre := Jvm{
+			Home:    jreLayer.Root,
+			Version: i.Version,
+		}
+		if err := jdkLayer.WriteMetadata(jdk, layers.Cache, layers.Build); err != nil {
+			return jdk, err
+		}
+		if err := jreLayer.WriteMetadata(jre, layers.Launch); err != nil {
+			return jre, err
+		}
+		i.Log.Info("JRE %s added to launch image", jre.Version.Tag)
 	}
 
 	return jdk, nil
 }
 
-func (jdk Jdk) WriteMetadata(layer layers.Layer) error {
-	return layer.WriteMetadata(jdk, layers.Launch)
-}
-
 func (i *Installer) fetchJdk(jdkUrl string, layer layers.Layer) error {
 	cmd := exec.Command(filepath.Join("jdk-fetcher"), jdkUrl, layer.Root)
+	cmd.Env = os.Environ()
+	cmd.Stdout = i.Out
+	cmd.Stderr = i.Err
+
+	return cmd.Run()
+}
+
+func (i *Installer) removeLayer(layer layers.Layer) error {
+	if _, err := os.Stat(layer.Metadata); err == nil {
+		if err := os.Remove(layer.Metadata); err != nil {
+			return err
+		}
+	}
+
+	cmd := exec.Command(filepath.Join("rm"), "-rf", layer.Root)
+	cmd.Env = os.Environ()
+	cmd.Stdout = i.Out
+	cmd.Stderr = i.Err
+
+	return cmd.Run()
+}
+
+func (i *Installer) extractJreFromJdk(jreDir string, jreLayer layers.Layer) error {
+	cmd := exec.Command(filepath.Join("cp"), "-R", jreDir, jreLayer.Root)
 	cmd.Env = os.Environ()
 	cmd.Stdout = i.Out
 	cmd.Stderr = i.Err
@@ -143,7 +217,7 @@ func (i *Installer) detectVersion(appDir string) (Version, error) {
 	return defaultVersion(), nil
 }
 
-func InstallCerts(jdk Jdk) error {
+func InstallCerts(jdk Jvm) error {
 	jreCacerts := filepath.Join(jdk.Home, "jre", "lib", "security", "cacerts")
 	jdkCacerts := filepath.Join(jdk.Home, "lib", "security", "cacerts")
 	systemCacerts := filepath.Clean("/etc/ssl/certs/java/cacerts")
@@ -169,13 +243,17 @@ func CreateProfileScripts(buildpackDir string, layer layers.Layer) error {
 	if err != nil {
 		return err
 	}
-	layer.WriteProfile("jvm.sh", string(jvmProfiled))
+	if err = layer.WriteProfile("jvm.sh", string(jvmProfiled)); err != nil {
+		return err
+	}
 
 	jdbcProfiled, err := ioutil.ReadFile(filepath.Join(buildpackDir, "profile.d", "jdbc.sh"))
 	if err != nil {
 		return err
 	}
-	layer.WriteProfile("jdbc.sh", string(jdbcProfiled))
+	if err = layer.WriteProfile("jdbc.sh", string(jdbcProfiled)); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -187,31 +265,30 @@ func defaultVersion() Version {
 
 func ParseVersionString(v string) (Version, error) {
 	if v == "10" || v == "11" {
-		major, _ := strconv.Atoi(v)
-		return ParseVersionString(DefaultVersionStrings[major])
+		return ParseVersionString(DefaultVersionStrings[v])
 	} else if m := regexp.MustCompile("^(1[0-9])\\.").FindAllStringSubmatch(v, -1); len(m) == 1 {
-		major, _ := strconv.Atoi(m[0][1])
+		major := m[0][1]
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    v,
 			Major:  major,
 		}, nil
 	} else if m := regexp.MustCompile("^1\\.([7-9])$").FindAllStringSubmatch(v, -1); len(m) == 1 {
-		major, _ := strconv.Atoi(m[0][1])
+		major := m[0][1]
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    DefaultVersionStrings[major],
 			Major:  major,
 		}, nil
 	} else if m := regexp.MustCompile("^([7-9])$").FindAllStringSubmatch(v, -1); len(m) == 1 {
-		major, _ := strconv.Atoi(m[0][1])
+		major := m[0][1]
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    DefaultVersionStrings[major],
 			Major:  major,
 		}, nil
 	} else if m := regexp.MustCompile("^1\\.([7-9])").FindAllStringSubmatch(v, -1); len(m) == 1 {
-		major, _ := strconv.Atoi(m[0][1])
+		major := m[0][1]
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    v,
@@ -221,13 +298,13 @@ func ParseVersionString(v string) (Version, error) {
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    "9-181",
-			Major:  9,
+			Major:  "9",
 		}, nil
 	} else if m := regexp.MustCompile("^9\\.").FindAllStringSubmatch(v, -1); len(m) == 1 {
 		return Version{
 			Vendor: DefaultVendor,
 			Tag:    v,
-			Major:  9,
+			Major:  "9",
 		}, nil
 	} else if m := regexp.MustCompile("^zulu-(.*)").FindAllStringSubmatch(v, -1); len(m) == 1 {
 		return Version{
@@ -273,27 +350,26 @@ func IsValidJdkUrl(url string) bool {
 	return res.StatusCode < 300
 }
 
-func parseMajorVersion(tag string) int {
+func parseMajorVersion(tag string) string {
 	if m := regexp.MustCompile("^1\\.7").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 7
+		return "7"
 	} else if m := regexp.MustCompile("^1\\.8").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 8
+		return "8"
 	} else if m := regexp.MustCompile("^1\\.9").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 9
+		return "9"
 	} else if m := regexp.MustCompile("^7").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 7
+		return "7"
 	} else if m := regexp.MustCompile("^8").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 8
+		return "8"
 	} else if m := regexp.MustCompile("^9").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 9
+		return "9"
 	} else if m := regexp.MustCompile("^10").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 10
+		return "10"
 	} else if m := regexp.MustCompile("^11").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 11
+		return "11"
 	} else if m := regexp.MustCompile("^12").FindAllStringSubmatch(tag, -1); len(m) == 1 {
-		return 12
+		return "12"
 	} else {
-		major, _ := strconv.Atoi(tag)
-		return major
+		return tag
 	}
 }

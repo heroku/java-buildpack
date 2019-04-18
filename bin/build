@@ -31,7 +31,7 @@ fi
 
 export PATH="$PATH:$BP_DIR/bin"
 
-status "Installing JDK"
+status "Installing Java"
 jdk-installer -layers $1 -platform $2 -buildpack "$BP_DIR"
 
 # TODO the JVM buildpack should handle this

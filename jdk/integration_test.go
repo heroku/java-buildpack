@@ -32,7 +32,7 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 	it.Before(func() {
 		wd, _ := os.Getwd()
 
-		os.Setenv("STACK", "heroku-18")
+		_ = os.Setenv("STACK", "heroku-18")
 
 		cacerts, err := ioutil.ReadFile(filepath.Join(wd, "..", "test", "fixtures", "cacerts"))
 		if err != nil {
@@ -53,7 +53,7 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 			t.Fatal(err)
 		}
 
-		os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(wd, "..", "bin")))
+		_ = os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Join(wd, "..", "bin")))
 
 		installer = &jdk.Installer{
 			In:           []byte{},
@@ -71,7 +71,7 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		os.RemoveAll(layersDir.Root)
+		_ = os.RemoveAll(layersDir.Root)
 	})
 
 	when("#Install", func() {
@@ -102,25 +102,46 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 				t.Fatal("JDBC profile.d script not installed")
 			}
 
-			var jdkMetadata jdk.Jdk
-			if err := layersDir.Layer("jdk").ReadMetadata(&jdkMetadata); err != nil {
+			var jreMetadata jdk.Jvm
+			if err := layersDir.Layer("jre").ReadMetadata(&jreMetadata); err != nil {
 				t.Fatal("Layer metadata was not written")
 			}
 
+			if jreMetadata.Home != layersDir.Layer("jre").Root {
+				t.Fatalf(`Jvm.Home did not match: got %s, want %s`, jreMetadata.Home, layersDir.Layer("jre").Root)
+			}
+
+			if jreMetadata.Version.Major != "8" {
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %d`, jreMetadata.Version.Major, 8)
+			}
+
+			if jreMetadata.Version.Tag != jdk.DefaultVersionStrings["8"] {
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %s`, jreMetadata.Version.Tag, jdk.DefaultVersionStrings["8"])
+			}
+
+			if jreMetadata.Version.Vendor != jdk.DefaultVendor {
+				t.Fatalf(`Jvm.Version.Vendor did not match: got %s, want %s`, jreMetadata.Version.Vendor, jdk.DefaultVendor)
+			}
+
+			var jdkMetadata jdk.Jvm
+			if err := layersDir.Layer("jdk").ReadMetadata(&jdkMetadata); err != nil {
+				t.Fatal("JDK Layer metadata was not written")
+			}
+
 			if jdkMetadata.Home != layersDir.Layer("jdk").Root {
-				t.Fatalf(`Jdk.Home did not match: got %s, want %s`, jdkMetadata.Home, layersDir.Layer("jdk").Root)
+				t.Fatalf(`JDK Jvm.Home did not match: got %s, want %s`, jdkMetadata.Home, layersDir.Layer("jdk").Root)
 			}
 
-			if jdkMetadata.Version.Major != 8 {
-				t.Fatalf(`Jdk.Version.Tag did not match: got %d, want %d`, jdkMetadata.Version.Major, 8)
+			if jdkMetadata.Version.Major != "8" {
+				t.Fatalf(`JDK Jvm.Version.Tag did not match: got %s, want %d`, jreMetadata.Version.Major, 8)
 			}
 
-			if jdkMetadata.Version.Tag != jdk.DefaultVersionStrings[8] {
-				t.Fatalf(`Jdk.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Tag, jdk.DefaultVersionStrings[8])
+			if jdkMetadata.Version.Tag != jdk.DefaultVersionStrings["8"] {
+				t.Fatalf(`JDK Jvm.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Tag, jdk.DefaultVersionStrings["8"])
 			}
 
 			if jdkMetadata.Version.Vendor != jdk.DefaultVendor {
-				t.Fatalf(`Jdk.Version.Vendor did not match: got %s, want %s`, jdkMetadata.Version.Vendor, jdk.DefaultVendor)
+				t.Fatalf(`JDK Jvm.Version.Vendor did not match: got %s, want %s`, jdkMetadata.Version.Vendor, jdk.DefaultVendor)
 			}
 		})
 
@@ -151,25 +172,25 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 				t.Fatal("JDBC profile.d script not installed")
 			}
 
-			var jdkMetadata jdk.Jdk
+			var jdkMetadata jdk.Jvm
 			if err := layersDir.Layer("jdk").ReadMetadata(&jdkMetadata); err != nil {
 				t.Fatal("Layer metadata was not written")
 			}
 
 			if jdkMetadata.Home != layersDir.Layer("jdk").Root {
-				t.Fatalf(`Jdk.Home did not match: got %s, want %s`, jdkMetadata.Home, layersDir.Layer("jdk").Root)
+				t.Fatalf(`Jvm.Home did not match: got %s, want %s`, jdkMetadata.Home, layersDir.Layer("jdk").Root)
 			}
 
-			if jdkMetadata.Version.Major != 11 {
-				t.Fatalf(`Jdk.Version.Tag did not match: got %d, want %d`, jdkMetadata.Version.Major, 11)
+			if jdkMetadata.Version.Major != "11" {
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %d`, jdkMetadata.Version.Major, 11)
 			}
 
-			if jdkMetadata.Version.Tag != jdk.DefaultVersionStrings[11] {
-				t.Fatalf(`Jdk.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Tag, jdk.DefaultVersionStrings[11])
+			if jdkMetadata.Version.Tag != jdk.DefaultVersionStrings["11"] {
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Tag, jdk.DefaultVersionStrings["11"])
 			}
 
 			if jdkMetadata.Version.Vendor != jdk.DefaultVendor {
-				t.Fatalf(`Jdk.Version.Vendor did not match: got %s, want %s`, jdkMetadata.Version.Vendor, jdk.DefaultVendor)
+				t.Fatalf(`Jvm.Version.Vendor did not match: got %s, want %s`, jdkMetadata.Version.Vendor, jdk.DefaultVendor)
 			}
 		})
 

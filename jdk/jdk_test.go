@@ -16,7 +16,7 @@ import (
 
 func TestJdk(t *testing.T) {
 	spec.Run(t, "Installer", testJdkInstaller, spec.Report(report.Terminal{}))
-	spec.Run(t, "Jdk", testJdk, spec.Report(report.Terminal{}))
+	spec.Run(t, "Jvm", testJdk, spec.Report(report.Terminal{}))
 }
 
 func testJdk(t *testing.T, when spec.G, it spec.S) {
@@ -33,43 +33,43 @@ func testJdk(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		os.RemoveAll(layersDir.Root)
+		_ = os.RemoveAll(layersDir.Root)
 	})
 
 	when("#WriteMetadata", func() {
 		it("should detect jdk version", func() {
-			expected := jdk.Jdk{
+			expected := jdk.Jvm{
 				Home: layersDir.Root,
 				Version: jdk.Version{
-					Major:  8,
+					Major:  "8",
 					Tag:    "1.8.0_191",
 					Vendor: "openjdk",
 				},
 			}
 
-			if err := expected.WriteMetadata(layersDir.Layer("jdk")); err != nil {
+			if err := layersDir.Layer("jdk").WriteMetadata(expected, layers.Launch); err != nil {
 				t.Fatal(err)
 			}
 
-			var actual jdk.Jdk
+			var actual jdk.Jvm
 			if err := layersDir.Layer("jdk").ReadMetadata(&actual); err != nil {
 				t.Fatal("Layer metadata was not written")
 			}
 
 			if actual.Home != expected.Home {
-				t.Fatalf(`Jdk.Home did not match: got %s, want %s`, actual.Home, expected.Home)
+				t.Fatalf(`Jvm.Home did not match: got %s, want %s`, actual.Home, expected.Home)
 			}
 
 			if actual.Version.Major != expected.Version.Major {
-				t.Fatalf(`Jdk.Version.Tag did not match: got %d, want %d`, actual.Version.Major, expected.Version.Major)
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %s`, actual.Version.Major, expected.Version.Major)
 			}
 
 			if actual.Version.Tag != expected.Version.Tag {
-				t.Fatalf(`Jdk.Version.Tag did not match: got %s, want %s`, actual.Version.Tag, expected.Version.Tag)
+				t.Fatalf(`Jvm.Version.Tag did not match: got %s, want %s`, actual.Version.Tag, expected.Version.Tag)
 			}
 
 			if actual.Version.Vendor != expected.Version.Vendor {
-				t.Fatalf(`Jdk.Version.Vendor did not match: got %s, want %s`, actual.Version.Vendor, expected.Version.Vendor)
+				t.Fatalf(`Jvm.Version.Vendor did not match: got %s, want %s`, actual.Version.Vendor, expected.Version.Vendor)
 			}
 		})
 	})
@@ -83,7 +83,7 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
-		os.Setenv("STACK", "heroku-18")
+		_ = os.Setenv("STACK", "heroku-18")
 
 		installer = &jdk.Installer{
 			In:  []byte{},
@@ -100,7 +100,7 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		os.RemoveAll(layersDir.Root)
+		_ = os.RemoveAll(layersDir.Root)
 	})
 
 	when("#Init", func() {
@@ -120,7 +120,7 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 	when("#GetVersionUrl", func() {
 		it("should get 12.0.0", func() {
 			url, err := jdk.GetVersionUrl(jdk.Version{
-				Major:  12,
+				Major:  "12",
 				Tag:    "12.0.0",
 				Vendor: "openjdk",
 			})
@@ -135,7 +135,7 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 
 		it("should get 10.0.2", func() {
 			url, err := jdk.GetVersionUrl(jdk.Version{
-				Major:  10,
+				Major:  "10",
 				Tag:    "10.0.2",
 				Vendor: "openjdk",
 			})
@@ -150,7 +150,7 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 
 		it("should get 1.8.0_181", func() {
 			url, err := jdk.GetVersionUrl(jdk.Version{
-				Major:  8,
+				Major:  "8",
 				Tag:    "1.8.0_181",
 				Vendor: "openjdk",
 			})
@@ -165,7 +165,7 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 
 		it("should get zulu-1.8.0_181", func() {
 			url, err := jdk.GetVersionUrl(jdk.Version{
-				Major:  8,
+				Major:  "8",
 				Tag:    "1.8.0_181",
 				Vendor: "zulu",
 			})
@@ -187,8 +187,8 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 				t.Fatal(err)
 			}
 
-			if v.Major != 10 {
-				t.Fatalf(`JDK version did not match: got %d, want %d`, v.Major, 10)
+			if v.Major != "10" {
+				t.Fatalf(`JDK version did not match: got %s, want %d`, v.Major, 10)
 			}
 
 			if v.Tag != expected {
@@ -207,12 +207,12 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 				t.Fatal(err)
 			}
 
-			if v.Major != 8 {
-				t.Fatalf(`JDK version did not match: got %d, want %d`, v.Major, 8)
+			if v.Major != "8" {
+				t.Fatalf(`JDK version did not match: got %s, want %d`, v.Major, 8)
 			}
 
-			if v.Tag != jdk.DefaultVersionStrings[8] {
-				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Tag, jdk.DefaultVersionStrings[8])
+			if v.Tag != jdk.DefaultVersionStrings["8"] {
+				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Tag, jdk.DefaultVersionStrings["8"])
 			}
 
 			if v.Vendor != "openjdk" {
@@ -227,12 +227,12 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 				t.Fatal(err)
 			}
 
-			if v.Major != 11 {
-				t.Fatalf(`JDK version did not match: got %d, want %d`, v.Major, 11)
+			if v.Major != "11" {
+				t.Fatalf(`JDK version did not match: got %s, want %d`, v.Major, 11)
 			}
 
-			if v.Tag != jdk.DefaultVersionStrings[11] {
-				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Tag, jdk.DefaultVersionStrings[11])
+			if v.Tag != jdk.DefaultVersionStrings["11"] {
+				t.Fatalf(`JDK version did not match: got %s, want %s`, v.Tag, jdk.DefaultVersionStrings["11"])
 			}
 
 			if v.Vendor != "openjdk" {
@@ -247,8 +247,8 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 				t.Fatal(err)
 			}
 
-			if v.Major != 9 {
-				t.Fatalf(`JDK version did not match: got %d, want %d`, v.Major, 9)
+			if v.Major != "9" {
+				t.Fatalf(`JDK version did not match: got %s, want %d`, v.Major, 9)
 			}
 
 			if v.Tag != "9-181" {
@@ -267,8 +267,8 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 				t.Fatal(err)
 			}
 
-			if v.Major != 8 {
-				t.Fatalf(`JDK version did not match: got %d, want %d`, v.Major, 8)
+			if v.Major != "8" {
+				t.Fatalf(`JDK version did not match: got %s, want %d`, v.Major, 8)
 			}
 
 			if v.Tag != "1.8.0_191" {
@@ -287,8 +287,8 @@ func testJdkInstaller(t *testing.T, when spec.G, it spec.S) {
 				t.Fatal(err)
 			}
 
-			if v.Major != 8 {
-				t.Fatalf(`JDK version did not match: got %d, want %d`, v.Major, 8)
+			if v.Major != "8" {
+				t.Fatalf(`JDK version did not match: got %s, want %d`, v.Major, 8)
 			}
 
 			if v.Tag != "1.8.0_191" {
