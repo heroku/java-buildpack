@@ -122,6 +122,27 @@ func testIntegrationJdk(t *testing.T, when spec.G, it spec.S) {
 			if jreMetadata.Version.Vendor != jdk.DefaultVendor {
 				t.Fatalf(`Jvm.Version.Vendor did not match: got %s, want %s`, jreMetadata.Version.Vendor, jdk.DefaultVendor)
 			}
+
+			var jdkMetadata jdk.Jvm
+			if err := layersDir.Layer("jdk").ReadMetadata(&jdkMetadata); err != nil {
+				t.Fatal("JDK Layer metadata was not written")
+			}
+
+			if jdkMetadata.Home != layersDir.Layer("jdk").Root {
+				t.Fatalf(`JDK Jvm.Home did not match: got %s, want %s`, jdkMetadata.Home, layersDir.Layer("jdk").Root)
+			}
+
+			if jdkMetadata.Version.Major != 8 {
+				t.Fatalf(`JDK Jvm.Version.Tag did not match: got %d, want %d`, jreMetadata.Version.Major, 8)
+			}
+
+			if jdkMetadata.Version.Tag != jdk.DefaultVersionStrings[8] {
+				t.Fatalf(`JDK Jvm.Version.Tag did not match: got %s, want %s`, jdkMetadata.Version.Tag, jdk.DefaultVersionStrings[8])
+			}
+
+			if jdkMetadata.Version.Vendor != jdk.DefaultVendor {
+				t.Fatalf(`JDK Jvm.Version.Vendor did not match: got %s, want %s`, jdkMetadata.Version.Vendor, jdk.DefaultVendor)
+			}
 		})
 
 		it("should install the default JDK 11", func() {

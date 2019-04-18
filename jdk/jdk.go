@@ -108,10 +108,15 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jvm, error)
 	i.Log.Info("JDK %s installed", jdk.Version.Tag)
 
 	jreDir := filepath.Join(jdkLayer.Root, "jre")
+
 	if _, err = os.Stat(jreDir); err != nil || os.IsNotExist(err) {
 		// jdk 11+
-		if err := jdkLayer.WriteMetadata(jdk, layers.Launch); err != nil {
+		if err := jdkLayer.WriteMetadata(jdk, layers.Launch, layers.Cache, layers.Build); err != nil {
 			return jdk, err
+		}
+
+		if err := os.Remove(fmt.Sprintf("%s.toml", layersDir.Layer("jre").Root)); err != nil {
+			return jdk, nil
 		}
 	} else {
 		jreLayer := layersDir.Layer("jre")
@@ -122,6 +127,9 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jvm, error)
 		jre := Jvm{
 			Home:    jreLayer.Root,
 			Version: i.Version,
+		}
+		if err := jdkLayer.WriteMetadata(jdk, layers.Cache, layers.Build); err != nil {
+			return jdk, err
 		}
 		if err := jreLayer.WriteMetadata(jre, layers.Launch); err != nil {
 			return jre, err
