@@ -93,7 +93,7 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jvm, error)
 		if err = jdkLayer.ReadMetadata(&oldJdkMetadata); err == nil {
 			if oldJdkMetadata.Version.Tag == jdk.Version.Tag {
 				i.Log.Info("JDK %s installed from cache", oldJdkMetadata.Version.Tag)
-				return oldJdkMetadata, nil
+				return oldJdkMetadata, i.installJre(jdk, layersDir, jdkLayer)
 			} else {
 				i.Log.Debug("removing expired JDK from cache")
 				if err = i.removeLayer(jdkLayer); err != nil {
@@ -128,20 +128,24 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jvm, error)
 
 	i.Log.Info("JDK %s installed", jdk.Version.Tag)
 
+	return jdk, i.installJre(jdk, layersDir, jdkLayer)
+}
+
+func (i *Installer) installJre(jdk Jvm, layersDir layers.Layers, jdkLayer layers.Layer) error {
 	jreDir := filepath.Join(jdkLayer.Root, "jre")
 	jreLayer := layersDir.Layer("jre")
-	if err = i.removeLayer(jreLayer); err != nil {
-		return jdk, err
+	if err := i.removeLayer(jreLayer); err != nil {
+		return err
 	}
 
-	if _, err = os.Stat(jreDir); err != nil || os.IsNotExist(err) {
+	if _, err := os.Stat(jreDir); err != nil || os.IsNotExist(err) {
 		// jdk 11+
 		if err := jdkLayer.WriteMetadata(jdk, layers.Launch, layers.Cache, layers.Build); err != nil {
-			return jdk, err
+			return err
 		}
 	} else {
 		if err := i.extractJreFromJdk(jreDir, jreLayer); err != nil {
-			return jdk, err
+			return err
 		}
 
 		jre := Jvm{
@@ -149,15 +153,14 @@ func (i *Installer) Install(appDir string, layersDir layers.Layers) (Jvm, error)
 			Version: i.Version,
 		}
 		if err := jdkLayer.WriteMetadata(jdk, layers.Cache, layers.Build); err != nil {
-			return jdk, err
+			return err
 		}
 		if err := jreLayer.WriteMetadata(jre, layers.Launch); err != nil {
-			return jre, err
+			return err
 		}
 		i.Log.Info("JRE %s added to launch image", jre.Version.Tag)
 	}
-
-	return jdk, nil
+	return nil
 }
 
 func (i *Installer) fetchJdk(jdkUrl string, layer layers.Layer) error {
