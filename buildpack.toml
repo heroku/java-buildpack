@@ -2,7 +2,7 @@ api = "0.2"
 
 [buildpack]
 id = "heroku/java"
-version = "0.14"
+version = "0.15"
 name = "Java"
 
 [[stacks]]
