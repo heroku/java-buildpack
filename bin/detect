@@ -9,6 +9,13 @@ if [[ -f pom.xml ]] ||
    [[ -f pom.yaml ]] ||
    [[ -f pom.yml ]] ; then
   echo "Java"
+    cat << EOF > "$2"
+    [[provides]]
+    name = "openjdk-jre"
+
+    [[provides]]
+    name = "jvm-application"
+EOF
   exit 0
 else
   (>&2 echo "Could not find a pom.xml file! Please check that it exists and is committed to Git.")
